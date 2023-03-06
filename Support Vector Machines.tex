@@ -1,0 +1,110 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{geometry}
+\author{Greg Strabel}
+\title{Support Vector Machines}
+\begin{document}
+\maketitle
+\section{Linear SVM}
+Recall that a hyperplane $H$ in $\mathbb{R}^P$ is defined by a normal vector, $\beta \in \mathbb{R}^P$, and an offset from the origin, $\delta \in \mathbb{R}$, so that the hyperplane is the set $H = \{ x : \beta \cdot x - \delta = 0 \}$. Given a set of data $\{y_i,x_i \}_{i=1}^n$ where $x_i \in \mathbb{R}^P$ and $y_i \in \{-1,1\}$, the objective is to find a hyperplane that separates the data according to the $y$ values. In order for a separating hyperplane to generalize well to additional data, we prefer the hyperplane that maximizes the distance between it and the closest points on either side. Given the normal vector $\beta$ and offset $\delta$, there are two auxiliary hyperplanes $H_{-1} = \{ x : \beta \cdot x - \delta = -1 \}$ and $H_1 = \{ x : \beta \cdot x - \delta = 1 \}$ that are parallel to the hyperplane $H$ and both lie a distance of ${\| \beta \|}^{-1}$ from it; this distance is called the margin. Thus, we can formulate our objective as finding the values of $\beta$ and $\delta$ that satisfy $y_i \left( \beta \cdot x_i - \delta \right) \geq 1$ for all $i$ and minimize $\| \beta \|$.
+
+One problem with this formulation remains: the data may not be linearly separable. To accommodate this case we introduce slack variables that allow individual data points to lie on the wrong sides of the two auxiliary hyperplanes. For each $i$, we have a slack variable $\zeta_i \geq 0$ so that $y_i \left( \beta \cdot x_i - \delta \right) \geq 1 - \zeta_i$.
+
+There is a trade-off between increasing the margin (distance between the auxiliary hyperplanes) and allowing greater slackness for data points on the wrong sides of the hyperplanes. We control this trade-off through a parameter $\lambda$. Thus, the problem to solve is:
+\begin{equation} \label{eq1}
+\underset{\beta,\delta}{\mathbf{min}} \frac{1}{2} {\left \| \beta \right \|}^2 + \lambda \sum_{i=1}^n \zeta_i
+\end{equation}
+subject to the constraints:
+\begin{equation} \label{eq1}
+\forall i \; : \; y_i \left( \beta \cdot x_i - \delta \right) \geq 1 - \zeta_i \; \wedge \; \zeta_i \geq 0
+\end{equation}
+The Lagrangian for this problem is:
+\begin{equation} \label{eq1}
+L = \frac{1}{2} {\left \| \beta \right \|}^2 + \lambda \sum_{i=1}^n \zeta_i - \sum_{i=1}^n \gamma_i \left[ y_i \left( \beta \cdot x_i - \delta \right) - 1 + \zeta_i \right] - \sum_{i=1}^n \eta_i \zeta_i
+\end{equation}
+The first order conditions are:
+\begin{equation} \label{eqFOC1}
+\frac{\partial L}{\partial \beta_j} = \beta_j - \sum_{i=1}^n \gamma_i y_i x_{ij} = 0
+\end{equation}
+\begin{equation} \label{eq1}
+\frac{\partial L}{\partial \delta} = \sum_{i=1}^n \gamma_i y_i = 0
+\end{equation}
+\begin{equation} \label{eq1}
+\frac{\partial L}{\partial \zeta_i} = \lambda - \gamma_i - \eta_i = 0
+\end{equation}
+Condition~\eqref{eqFOC1} implies:
+\begin{equation} \label{eq1}
+{\left \| \beta \right \|}^2 = \sum_{i=1}^n \gamma_i y_i \beta \cdot x_i
+\end{equation}
+and
+\begin{equation} \label{eq1}
+{\left \| \beta \right \|}^2 = \sum_{i=1}^n \sum_{k=1}^n \gamma_i \gamma_k y_i y_k x_i \cdot x_k
+\end{equation}
+Substituting into the Lagrangian, we have
+\begin{equation} \label{eq1}
+\begin{split}
+L & = \frac{1}{2} {\left \| \beta \right \|}^2 + \lambda \sum_{i=1}^n \zeta_i - {\left \| \beta \right \|}^2 + \delta \sum_{i=1}^n \gamma_i y_i + \sum_{i=1}^n \gamma_i - \sum_{i=1}^n \gamma_i \zeta_i - \sum_{i=1}^n \left( \lambda - \gamma_i \right) \zeta_i \\
+ & = - \frac{1}{2} {\| \beta \|}^2 + \sum_{i=1}^n \gamma_i \\
+ & = \sum_{i=1}^n \gamma_i - \frac{1}{2} \sum_{i=1}^n \sum_{k=1}^n \gamma_i \gamma_k y_i y_k x_i \cdot x_k
+\end{split}
+\end{equation}
+It follows that the Lagrangian dual problem is:
+\begin{equation} \label{eq1}
+\underset{\gamma}{\mathbf{max}} \sum_{i=1}^n \gamma_i - \frac{1}{2} \sum_{i=1}^n \sum_{k=1}^n \gamma_i \gamma_k y_i y_k x_i \cdot x_k
+\end{equation}
+subject to the constraints:
+\begin{equation} \label{eq1}
+\forall i \; : \; 0 \leq \gamma_i \leq \lambda
+\end{equation}
+and
+\begin{equation} \label{eq1}
+\sum_{i=1}^n \gamma_i y_i = 0
+\end{equation}
+This is a convex programming problem and can be solved by standard numerical techniques.
+The Kharush-Kuhn-Tucker conditions for a solution require that:
+\begin{equation} \label{eq1}
+\gamma_i \left[ y_i \left( \beta \cdot x_i - \delta \right) - 1 + \zeta_i \right] = 0
+\end{equation}
+which implies that if $y_i \left( \beta \cdot x_i - \delta \right) > 1$ then $\gamma_i = 0$.
+From condition~\eqref{eqFOC1} it follows that
+\begin{equation} \label{eq1}
+\beta = \sum_{i=1}^n \gamma_i y_i x_i
+\end{equation}
+where $\gamma_i \neq 0$ only if observation $i$ lies on the wrong side of the corresponding auxiliary hyperplane.
+\section{Nonlinear SVM}
+The hyperplane from the previous section was constructed in the input space $\mathbb{R}^P$. Instead, we could consider a function $\phi$ that maps $\mathbb{R}^P$ to a transformed feature space $\mathbb{R}^{P'}$ and find a hyperplane in this space. If we replace $x_i$ with $\phi \left( x_i \right)$ throughout the derivations in the previous section we arrive at the "kernel trick" for general nonlinear SVMs:
+
+The Lagrangian dual problem is now:
+\begin{equation} \label{eq1}
+\underset{\gamma}{\mathbf{max}} \sum_{i=1}^n \gamma_i - \frac{1}{2} \sum_{i=1}^n \sum_{k=1}^n \gamma_i \gamma_k y_i y_k \phi \left( x_i \right) \cdot \phi \left( x_k \right)
+\end{equation}
+subject to the constraints:
+\begin{equation} \label{eq1}
+\forall i \; : \; 0 \leq \gamma_i \leq \lambda
+\end{equation}
+and
+\begin{equation} \label{eq1}
+\sum_{i=1}^n \gamma_i y_i = 0
+\end{equation}
+It follows that the SVM will depend on $\phi$ only through terms of the form $\phi \left( x_i \right) \cdot \phi \left( x_k \right)$. This implies that we do not even need to specify $\phi$; it is enough to specify values of the dot product using a kernel function, $K$. Recall that given a nonempty set $\mathfrak{X}$, $K : \mathfrak{X} \times \mathfrak{X} \rightarrow \mathbb{R}$ is a kernel if it is symmetric and positive definite:
+\begin{equation} \label{eq1}
+\sum_{i=1}^N \sum_{j=1}^N c_i c_j K \left( x_i ,x_j \right) \geq 0 \; \; \forall n \in \mathbb{N}, \; \forall c_i,c_j \in \mathbb{R}, \; \forall x_i, x_j \in \mathfrak{X}
+\end{equation}
+Kernels commonly used in nonlinear SVMs include:
+
+\noindent
+1. Homogeneous polynomial: $K \left( x_i, x_j \right) = {\left( x_i \cdot x_j \right)}^d$
+
+\noindent
+2. Inhomogeneous polynomial: $K \left( x_i, x_j \right) = {\left( x_i \cdot x_j + 1 \right)}^d$
+
+\noindent
+3. Gaussian radial basis function: $K \left( x_i , x_j \right) = \exp \left( - \gamma {\| x_i - x_j \|}^2 \right)$ for $\gamma > 0$
+
+\noindent
+Note that to classify points using the nonlinear SVM and the kernel trick, we now use:
+\begin{equation} \label{eqNonlinearClass}
+\mathbf{sign} \sum_{i=1}^n \gamma_i y_i K \left( x_i , x \right)
+\end{equation}
+\end{document}

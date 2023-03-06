@@ -1,0 +1,27 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{multicol}
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\DontPrintSemicolon
+\usepackage{varioref}
+\usepackage{hyperref}
+\labelformat{algocf}{\textit{Algorithm}\,(#1)}
+\usepackage{mathtools}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+\author{Greg Strabel}
+\setlength{\parindent}{0pt}
+\title{Basics of Time Series}
+\begin{document}
+The $K$-class categorical distribution has probability mass function
+$$f \left( y |  p \right) = \prod_{k \in \{1,...,K \}} p_k^{y_k}$$
+where $y \in \{0,1\}^K : \sum_{k=1}^K y_k = 1$ is the one-hot encoding of the observed class.
+
+The $\left( K-1 \right)$-simplex is $\Delta^{K-1} = \{ p \in \mathbb{R}^K : p_k \geq 0 \; \forall k, \; \sum_{k=1}^K p_k = 1 \}$
+
+Given a model $m: \mathbb{X} \rightarrow \Delta^{K-1}$, the log loss on a set of observations $\{x_i,y_i\}_{i=1}^N$ is
+$$LL = -\frac{1}{N} \sum_{i=1}^N \ln \left( \prod_{k=1}^K \left[ m_k \left( x_i \right)\right]^{y_k} \right)
+= -\frac{1}{N} \sum_{i=1}^N \sum_{k=1}^K y_k \ln \left(   m_k \left( x_i \right) \right)$$
+\end{document}

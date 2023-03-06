@@ -1,0 +1,233 @@
+\documentclass[11pt]{article}
+\usepackage{amssymb,amsmath,amsthm}
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\argmin}{argmin} 
+\newtheorem{theorem}{Theorem}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\usepackage{amsfonts}
+\usepackage{geometry}
+\usepackage{bbm}
+\usepackage{listings}
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\DontPrintSemicolon
+\usepackage{varioref}
+\usepackage{hyperref}
+\labelformat{algocf}{\textit{Algorithm}\,(#1)}
+\author{Greg Strabel}
+\title{Reinforcement Learning}
+\begin{document}
+\maketitle
+\section{Key Concepts}
+\begin{definition} A \textbf{Markov Decision Process} is a 4-tuple $(S,A,P,R)$, where:
+\begin{itemize}
+\item $S$ is a set of states
+\item $A$ is a set of actions
+\item $P$ is a probability measure such that $P(s_{t+1}=s'| s_t=s, a_t=a)$ is the probability of transitioning to state $s'$ at time $t+1$ given that the state at time $t$ is $s$ and the agent has performed action $a$ at time $t$.
+\item $R$ is a reward function. The agent receives the immediate reward $R(s,a)$ for performing action $a$ in state $s$. 
+\end{itemize}
+\end{definition}
+\begin{definition} A decision policy is a function $\pi : S \times A \rightarrow [0,1]$ such that
+\begin{equation}
+\int_A \pi(s,a)da=1 \hspace{1cm} \forall s\in S
+\end{equation}
+The space of all decision functions is denoted $\Pi$.
+\end{definition}
+Given a discount rate $\gamma \in (0,1)$ and an initial state $s_0$, the objective of the decision agent is:
+\begin{equation}
+\mathrm{max}_{\pi \in \Pi} \mathbb{E}_{s_{1:\infty},a_{0:\infty}} \left[ \sum_{t=0}^{\infty} \gamma^t R(s_t, a_t) | \pi, s_0 = s \right]
+\end{equation}
+\begin{definition} The state-value of a policy $\pi$ for a Markov Decision Process $(S,A,P,R)$ is a function $V^{\pi} : S \rightarrow \mathbb{R}$ defined as
+\begin{equation}
+V^{\pi}(s) = \mathbb{E}_{s_{1:\infty},a_{0:\infty}} \left[ \sum_{t=0}^{\infty} \gamma^t R(s_t, a_t) | \pi, s_0 = s \right]
+\end{equation}
+\end{definition}
+Note that
+\begin{equation}
+\begin{split}
+V^{\pi}(s) &= \mathbb{E}_{s_{1:\infty},a_{0:\infty}} \left[ \sum_{t=0}^{\infty} \gamma^t R(s_t, a_t) | \pi, s_0 = s \right] \\
+&= \int_A R(s,a) \pi (s,a) da + \mathbb{E}_{s_1,a_0} \left[ \mathbb{E}_{s_{2:\infty},a_{1:\infty}} \left[ \sum_{t=1}^{\infty} \gamma^t R(s_t, a_t) | \pi, s_1 = s' \right] | \pi, s_0 = s \right] \\
+&= \int_A R(s,a) \pi (s,a) da + \gamma \mathbb{E}_{s_1,a_0} \left[ V^{\pi}(s_1) | \pi, s_0 = s \right]
+\end{split}
+\end{equation}
+
+\begin{definition}
+The action-value of a policy $\pi$ for a Markov Decision Process $(S,A,P,R)$ is a function $Q^{\pi} : S \times A \rightarrow \mathbb{R}$ defined as
+\begin{equation}
+\begin{split}
+Q^{\pi} (s,a) = \mathbb{E}_{s_{1:\infty},a_{1:\infty}} \left[ \sum_{t=0}^{\infty} \gamma^t R(s_t, a_t) | \pi, s_0 = s, a_0 = a \right]
+\end{split}
+\end{equation}
+\end{definition}
+
+\section{Policy Gradient Theorem (PGT)}
+\begin{definition} For $s,s' \in S$, let $\rho^{\pi}(s \rightarrow s',0) = \mathbbm{1}\{s=s'\}$ and $\rho^{\pi}(s \rightarrow s',1) = \int_A \pi (a, s) p(s'|s,a) da$. For $s,s' \in S$ and $k \ge 1$, define $\rho^{\pi}(s \rightarrow s',k+1)$ recursively by
+\begin{equation}
+\rho^{\pi}(s \rightarrow s',k+1) = \int_S \rho^{\pi}(s \rightarrow x,k) \rho^{\pi}(x \rightarrow s',1) dx
+\end{equation}
+\end{definition}
+\begin{definition}
+\begin{equation}
+J(\theta) = \int_S p_0(s_0)V^{\pi}(s_0)ds_0 = 
+\int_S p_0(s_0) \int_A \pi (s_0, a_0, \theta ) Q^{\pi}(s_0,a_0) da_0 ds_0
+\end{equation}
+\end{definition}
+\begin{theorem}
+Policy Gradient Theorem
+\begin{equation}
+\triangledown_{\theta}J(\theta) = \int_S \rho^{\pi}(s) \int_A \triangledown_{\theta} \pi (s,a,\theta) Q^{\pi}(s,a) da ds
+\end{equation}
+where
+\begin{equation}
+\rho^{\pi}(s) = \int_S \sum_{t=0}^{\infty} \gamma^t p_0(s_0) \rho^{\pi}(s_0 \rightarrow s, t) ds_0
+\end{equation}
+\end{theorem}
+See Appendix for the proof of the PGT.
+
+
+
+Note that 
+\begin{equation}
+\rho^{\pi}(s) = \int_S \sum_{t=0}^{\infty} \gamma^t p_0(s_0) \rho^{\pi}(s_0 \rightarrow s, t) ds_0
+= \sum_{t=0}^{\infty} \gamma^t P \left( s_t = s | \pi \right)
+\end{equation}
+so that
+\begin{equation}
+\begin{split}
+\triangledown_{\theta} J ( \theta ) 
+&= \int_S \rho^{\pi}(s) \int_A \triangledown_{\theta} \pi(s,a,\theta) Q^{\pi}(s,a)dads
+\\
+&= \sum_{t=0}^{\infty} \gamma^t \int_S \int_A P \left( s_t = s | \pi \right) \pi(s,a,\theta) \triangledown_{\theta} \mathrm{ln}\pi(s,a,\theta) Q^{\pi} (s,a)dads
+\\
+&= \sum_{t=0}^{\infty} \gamma^t \int_S \int_A P \left( s_t = s, a_t = a | \pi \right) \triangledown_{\theta} \mathrm{ln}\pi(s,a,\theta) Q^{\pi} (s,a)dads
+\end{split}
+\end{equation}
+Additionally, as note in \cite{schulman2015}, for any function $f(s_{0:t},a_{0:t-1})$, 
+\begin{equation}
+\begin{aligned}
+& \mathbb{E}_{s_{0:\infty}a_{0:\infty}} \left[ \triangledown_{\theta} \mathrm{ln} \pi (s_t,a_t,\theta) f(s_{0:t},a_{0:t-1}) | \pi \right] \\
+&= \mathbb{E}_{s_{0:t}a_{0:t-1}} \left[
+\mathbb{E}_{s_{t+1:\infty}a_{t:\infty}} \left[
+\triangledown_{\theta} \mathrm{ln}\pi(s_t,a_t,\theta) f(s_{0:t},a_{0:t-1}) | \pi, s_{0:t}a_{0:t-1}
+\right] | \pi
+\right]
+\\
+&= \mathbb{E}_{s_{0:t}a_{0:t-1}} \left[ f(s_{0:t},a_{0:t-1})
+\mathbb{E}_{s_{t+1:\infty}a_{t:\infty}}  \left[
+\triangledown_{\theta} \mathrm{ln}\pi(s_t,a_t,\theta) | \pi, s_{0:t}a_{0:t-1}
+\right] | \pi
+\right]
+\\
+&= \mathbb{E}_{s_{0:t}a_{0:t-1}} \left[ f(s_{0:t},a_{0:t-1})
+\mathbb{E}_{a_t}  \left[
+\triangledown_{\theta} \mathrm{ln}\pi(s_t,a_t,\theta) | \pi, s_t
+\right] | \pi
+\right]
+\\
+&= \mathbb{E}_{s_{0:t}a_{0:t-1}} \left[ f(s_{0:t},a_{0:t-1})
+\cdot \int_A \frac{\triangledown_{\theta} \pi (s_t,a,\theta)}{\pi (s_t,a,\theta)} \pi (s_t,a,\theta) da \vert \pi
+\right]
+\\
+&= \mathbb{E}_{s_{0:t}a_{0:t-1}} \left[ f(s_{0:t},a_{0:t-1})
+\cdot 0 | \pi
+\right]
+\\
+&= 0
+\end{aligned}
+\end{equation}
+
+\section{Q-learning}
+
+Q-learning is an approach to reinforcement learning that estimates the action-value function of the optimal policy. Q-learning represents the action-value function as a function, $Q(s,a,\theta)$, typically a deep neural network, with a vector of parameters $\theta$. \cite{mnih2015humanlevel}
+\begin{algorithm}
+\SetNoFillComment
+\KwIn{Replay memory $D$ with capacity $N$ \\
+\mbox{}\phantom{\textbf{Input:}} Action-value function $Q$ with random weights $\theta$ \\ 
+\mbox{}\phantom{\textbf{Input:}} Target action-value function $\hat{Q}$ with weights $\theta^-=\theta$}
+\KwOut{Weights $\theta$}
+\For{episode = 0 to M}{
+Sample $s_0$ from emulator\;
+\For{t = 0 to T}{
+$a_t = \begin{cases} \textrm{select random action} & \textrm{with probability} \ \epsilon \\ \argmax_a Q(s_t,a_t,\theta) & \textrm{with probability} \ 1 - \epsilon \end{cases}$\;
+Execute action $a_t$ in emulator, observe reward $r_t$ and state $s_{t+a}$\;
+Store $(s_t,a_t,r_t,s_{t+1})$ in replay memory $D$\;
+Sample random minibatch of transitions $(s_j,a_j,r_j,a_{j+1})$ from $D$\;
+Set $y_j = \begin{cases} r_j & \textrm{if episode terminates at step}\ j+1 \\ r_j + \gamma \mathrm{max}_a \hat{Q}(s_{j+1},a,\theta^-) & \mathrm{otherwise} \end{cases}$\;
+Perform a gradient descent step on $\left(y_j - Q(s_j,a_j,\theta) \right)^2$ with respect to $\theta$\;
+Every C steps reset $\theta^- \leftarrow \theta$
+}
+}
+\Return{$\theta$}\;
+\caption{Q-learning with experience replay}\label{qlearning}
+\end{algorithm}
+
+\bibliographystyle{alpha} % We choose the "plain" reference style
+\bibliography{reinforcementlearning} % Entries are in the refs.bib file
+
+\appendix
+\section{Proof of the Policy Gradient Theorem}
+\begin{proof} \label{PGTProof}
+Let $\phi(s) = \int_A \triangledown_{\theta} \pi(s,a,\theta) Q^{\pi}(s,a) da$. Then
+\begin{equation}
+\begin{split}
+\triangledown_{\theta} V^{\pi} (s) &= \int_A \left[ \triangledown_{\theta} \pi (s,a,\theta) Q^{\pi}(s,a) + \pi(s,a,\theta) \triangledown_{\theta} Q^{\pi}(s,a) \right] da \\
+&= \phi(s) + \int_A \pi(s,a,\theta) \triangledown_{\theta} Q^{\pi}(s,a) da
+\\
+&= \phi(s) + \int_A \pi(s,a,\theta) \triangledown_{\theta} \left[r(s,a) + \gamma \int_S p(s'|s,a) V^{\pi}(s') ds' \right] da
+\\
+&= \phi(s) + \gamma \int_S \int_A \pi(s,a,\theta)p(s'|s,a)da \triangledown_{\theta}V^{\pi}(s')ds'
+\\
+&= \int_S \gamma^0 \phi(s') \rho^{\pi}(s \rightarrow s',0)ds' + \gamma \int_S \rho^{\pi}(s \rightarrow s', 1) \triangledown_{\theta} V^{\pi} (s') ds'
+\end{split}
+\end{equation}
+Now suppose that for some $k \ge 0$,
+\begin{equation}
+\triangledown_{\theta}V^{\pi}(s) = \sum_{i=0}^k \int_S \gamma^i \phi(s') \rho^{\pi}(s \rightarrow s',i)ds' + \gamma^{k+1} \int_S \rho^{\pi}(s \rightarrow s',k+1) \triangledown_{\theta} V^{\pi}(s')ds'
+\end{equation}
+Then
+\begin{equation}
+\begin{split}
+\triangledown_{\theta}V^{\pi}(s) &= \sum_{i=0}^k \int_S \gamma^i \phi(s') \rho^{\pi}(s \rightarrow s',i)ds' + \gamma^{k+1} \int_S \rho^{\pi}(s \rightarrow s',k+1) \triangledown_{\theta} V^{\pi}(s')ds'
+\\
+&= \sum_{i=0}^k \int_S \gamma^i \phi(s') \rho^{\pi}(s \rightarrow s',i)ds'
+\\
+&+ \gamma^{k+1} \int_S \rho^{\pi}(s \rightarrow s',k+1) 
+  \int_S \gamma^0 \phi(s'') \rho^{\pi}(s' \rightarrow s'',0)ds''
+ds' \\
+&+ \gamma^{k+1} \int_S \rho^{\pi}(s \rightarrow s',k+1)
+  \gamma \int_S \rho^{\pi}(s' \rightarrow s'', 1) \triangledown_{\theta} V^{\pi} (s'') ds'' ds'
+  \\
+&= \sum_{i=0}^{k+1} \int_S \gamma^i \phi(s') \rho^{\pi}(s \rightarrow s',i)ds'
+\\
+&+ \gamma^{k+2} \int_S \int_S \rho^{\pi}(s \rightarrow s',k+1) \rho^{\pi}(s' \rightarrow s'',1) ds' \triangledown_{\theta} V^{\pi}(s'') ds''
+\\
+&= \sum_{i=0}^{k+1} \int_S \gamma^i \phi(s') \rho^{\pi}(s \rightarrow s',i)ds'
++ \gamma^{k+2} \int_S \rho^{\pi}(s \rightarrow s'',k+2) \triangledown_{\theta} V^{\pi}(s'') ds''
+\end{split}
+\end{equation}
+Hence, by induction, for all $k \ge 0$,
+\begin{equation}
+\triangledown_{\theta}V^{\pi}(s) = \sum_{i=0}^k \int_S \gamma^i \phi(s') \rho^{\pi}(s \rightarrow s',i)ds' + \gamma^{k+1} \int_S \rho^{\pi}(s \rightarrow s',k+1) \triangledown_{\theta} V^{\pi}(s')ds'
+\end{equation}
+Taking the limit as $k \rightarrow \infty$, we have
+\begin{equation}
+\begin{split}
+\triangledown_{\theta}V^{\pi}(s) &= \sum_{i=0}^{\infty} \int_S \gamma^i \phi(s') \rho^{\pi}(s \rightarrow s',i)ds' \\
+&= 
+\int_S \sum_{i=0}^{\infty} \gamma^i \rho^{\pi}(s \rightarrow s',i) \int_A \triangledown_{\theta} \pi(s',a,\theta) Q^{\pi}(s',a) da ds'
+\end{split}
+\end{equation}
+Plugging this into the definition of $J(\theta)$ yields
+\begin{equation}
+\begin{split}
+\triangledown_{\theta}J(\theta) &= \int_S p_0(s_0) \triangledown_{\theta}V^{\pi}(s_0)ds_0
+\\
+&= \int_S p_0(s_0) \int_S \sum_{i=0}^{\infty} \gamma^i \rho^{\pi}(s_0 \rightarrow s,i) \int_A \triangledown_{\theta} \pi(s,a,\theta) Q^{\pi}(s,a) da ds
+ds_0
+\\
+&= \int_S \rho^{\pi}(s) \int_A \triangledown_{\theta} \pi(s,a,\theta) Q^{\pi}(s,a)dads
+\end{split}
+\end{equation}
+\end{proof}
+
+\end{document}

@@ -1,0 +1,140 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\argmin}{argmin} 
+\usepackage{amsfonts}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsthm}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\usepackage{geometry}
+\usepackage{mathtools}
+\usepackage{listings}
+\usepackage{physics}
+\usepackage{parskip}
+\author{Greg Strabel}
+\title{Quantum Mechanics}
+\begin{document}
+\maketitle
+\section{Preliminaries}
+Quantum mechanics is characterized by the following principles:
+\begin{enumerate}
+\item The quantum state space, $\mathcal{H}$, is a complex, separable Hilbert space. A quantum state $\phi \in \mathcal{H}$ satisfies $\langle \phi , \phi \rangle = 1$
+\item The observable/measurable quantities of quantum mechanics are represented by Hermitian operators on $\mathcal{H}$, that is $L: \mathcal{H} \rightarrow \mathcal{H} \ s.t. \ L = L^*$
+\item The possible results of a measurement are the eigenvalues of the corresponding operator.
+\item Given an observable $L$ with eigenvalues $\{\lambda_i\}$ and corresponding eigenspaces $\{E_i\}$, if the state vector of the system is $\ket{\Psi} \in \mathcal{H}$, then the probability of observing $\lambda_i$ is
+\begin{equation}
+\mathbb{P}\left(\lambda_i\right)=\lvert \ket{P_{E_i} \Psi} \rvert^2
+\end{equation}
+where $\ket{P_{E_i} \Psi}$ is the projection of $\ket{\Psi}$ onto $E_i$.
+\item The quantum state evolves across time according to a unitary operator $U$ ($UU^* = U^*U = I$) such the
+\begin{equation}
+\ket{\Psi \left( t \right)} = U\left(t\right) \ket{\Psi \left( 0 \right)}
+\end{equation}
+where $\ket{ \Psi \left( t \right)}$ is the quantum state at time $t$ and $\ket{\Psi \left( 0 \right)}$ is the quantum state at time 0. $U$ is smooth in $t$. 
+\end{enumerate}
+If we define the Hamiltonian $H\left(t\right)$ as
+\begin{equation}
+H \left( t \right) = \frac{1}{i \hbar} \frac{\partial U}{\partial t} \left( t \right)
+\end{equation}
+where $\hbar$ is Planck's constant, then we have
+\begin{equation}
+i \hbar \frac{\partial \ket{\Psi \left( t \right)}}{\partial t} = H \left( t \right) \ket{\Psi \left( t \right)}
+\end{equation}
+the generalized Schr\"{o}dinger equation.
+
+\section{A single qubit}
+The simplest quantum system is that of a single qubit: for instance, the quantum spin of a single particle. In this case $V$ is isomorphic to $\mathbb{C}^2$ and we let $\mathcal{B} = \{ \ket{0}, \ket{1} \}$ denote an orthonormal basis of $V$.
+\begin{definition}[Spin Operators $\sigma_x$, $\sigma_y$ and $\sigma_z$]
+The three spin operators \textbf{$\sigma_x$}, $\sigma_y$ and $\sigma_z$ are defined by
+$$\sigma_x \ket{0} = \ket{1} \ \mathrm{and} \ \sigma_x \ket{1} = \ket{0}$$ $$\sigma_y \ket{0} = i\ket{1} \ \mathrm{and} \ \sigma_y \ket{1} = -i\ket{0}$$ $$\sigma_z \ket{0} = \ket{0} \ \mathrm{and} \ \sigma_z \ket{1} = -\ket{1}$$
+\end{definition}
+\begin{definition}[Pauli Matrices]
+The matrix representations of the spin operators $\sigma_x$, $\sigma_y$ and $\sigma_z$ in the basis $\mathcal{B}$ are
+$$
+\left[ \sigma_x \right]_{\mathcal{B}} = \begin{bmatrix}
+0 & 1 \\ 1 & 0
+\end{bmatrix}
+,
+\
+\left[ \sigma_y \right]_{\mathcal{B}} = \begin{bmatrix}
+0 & -i \\ i & 0
+\end{bmatrix}
+,
+\
+\left[ \sigma_z \right]_{\mathcal{B}} = \begin{bmatrix}
+1 & 0 \\ 0 & -1
+\end{bmatrix}
+$$
+These are the \textbf{Pauli matrices}.
+\end{definition}
+
+From the Pauli matrices it is easy to see that any Hermetian operator $L \in span \{ I, \sigma_x, \sigma_y, \sigma_z \}$.
+
+The normalized eigenvectors of $\sigma_z$ are obviously $\ket{0}$ and $\ket{1}$ with corresponding eigenvalues of 1 and -1. Likewise, it is easily verified that the normalized eigenvectors of $\sigma_x$ are $$\frac{1}{\sqrt{2}} \left( \ket{0} \pm \ket{1} \right)$$ with eigenvalues $\pm 1$. Finally, one can also verify that the normalized eigenvectors of $\sigma_y$ are $$\frac{1}{\sqrt{2}} \left( \ket{0} \pm i\ket{1} \right)$$ with eigenvalues $\pm 1$.
+
+\section{Entanglement}
+Consider two systems, $A$ and $B$, of a single qubit each. The two systems have state spaces $V_A$ and $V_B$, respectively, and orthonormal bases $\mathcal{B}_A$ and $\mathcal{B}_B$, respectively. We can construct a combined system with state space $V = V_A \otimes V_B$ and basis $\mathcal{B} = \mathcal{B}_A \otimes \mathcal{B}_B$. Note that $V$ is isomorphic to $\mathbb{C}^2 \otimes \mathbb{C}^2 = \mathbb{C}^4$ and in the basis $\mathcal{B}$:
+$$
+\left[ \ket{0_A0_B} \right]_{\mathcal{B}} = \begin{bmatrix}
+1 \\ 0 \\ 0 \\ 0
+\end{bmatrix}
+,\
+\left[ \ket{0_A1_B} \right]_{\mathcal{B}} = \begin{bmatrix}
+0 \\ 1 \\ 0 \\ 0
+\end{bmatrix}
+,\
+\left[ \ket{1_A0_B} \right]_{\mathcal{B}} = \begin{bmatrix}
+0 \\ 0 \\ 1 \\ 0
+\end{bmatrix}
+\ \mathrm{and} \ 
+\left[ \ket{1_A1_B} \right]_{\mathcal{B}} = \begin{bmatrix}
+0 \\ 0 \\ 0 \\ 1
+\end{bmatrix}
+$$
+\begin{definition}[Singlet State]
+The singlet state, $\ket{s}$, of this system is
+$$\ket{s} = \frac{1}{\sqrt{2}} \left( \ket{0_A1_B} - \ket{1_A0_B} \right)$$
+\end{definition}
+In the basis $\mathcal{B}$:
+$$
+\left[ \ket{s} \right]_{\mathcal{B}}
+= \frac{1}{\sqrt{2}} \begin{bmatrix}
+0 \\ 1 \\ -1 \\ 0
+\end{bmatrix}
+$$
+Now observe that
+\begin{equation}
+\begin{split}
+\bra{s} \sigma_z \otimes I \ket{s}
+& = \frac{1}{\sqrt{2}} \bra{s} \left( \ket{0_A1_B} + \ket{1_A0_B} \right) \\
+& = \frac{1}{2} \left( \braket{0_A1_B}{0_A1_B} + \braket{0_A1_B}{1_A0_B} - \braket{1_A0_B}{0_A1_B} - \braket{1_A0_B}{1_A0_B} \right) \\
+& = \frac{1}{2} \left( 1 + 0 - 0 - 1 \right) \\
+& = 0
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\bra{s} \sigma_x \otimes I \ket{s}
+& = \frac{1}{\sqrt{2}} \bra{s} \left( \ket{1_A1_B} - \ket{0_A0_B} \right) \\
+& = \frac{1}{2} \left( \braket{0_A1_B}{1_A1_B} - \braket{0_A1_B}{0_A0_B} - \braket{1_A0_B}{1_A1_B} + \braket{1_A0_B}{0_A0_B} \right) \\
+& = \frac{1}{2} \left( 0 - 0 - 0 + 0 \right) \\
+& = 0
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\bra{s} \sigma_y \otimes I \ket{s}
+& = \frac{1}{\sqrt{2}} \bra{s} \left( i\ket{1_A1_B} + i\ket{0_A0_B} \right) \\
+& = \frac{1}{2} \left( i\braket{0_A1_B}{1_A1_B} + i\braket{0_A1_B}{0_A0_B} - i\braket{1_A0_B}{1_A1_B} - i\braket{1_A0_B}{0_A0_B} \right) \\
+& = \frac{1}{2} \left( 0 + 0 - 0 - 0 \right) \\
+& = 0
+\end{split}
+\end{equation}
+
+Let $L$ be a Hermetian operator on $V_A$ and consider the observable defined by $L \otimes I$. Since $L$ is Hermetian, there exists $a,b,c,d \in \mathbb{C}$ such that $L = aI + b\sigma_x + c\sigma_y + d\sigma_z$
+
+\end{document}

@@ -1,0 +1,146 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\DontPrintSemicolon
+\usepackage{varioref}
+\usepackage{hyperref}
+\labelformat{algocf}{\textit{Algorithm}\,(#1)}
+\author{Greg Strabel}
+\title{The Basics of Neural Networks}
+\begin{document}
+\maketitle
+\section{Assumptions}
+A neural network is a directed graph $G = \left( V,A \right)$ composed of nodes, $V$, and arrows, $A$. Assume that the nodes of the network have been indexed by a subscript $k \in \{ 1,...,K \}$ and that the output of the $k^{th}$ neuron is $o_{k} = \sigma_{k} \left( \psi_{k} \right)$ where $\sigma_{k} : \mathbb{R} \rightarrow \mathbb{R}$ is an activation function and
+\begin{equation} \label{eq1}
+\psi _{k} = \sum_{l : \left( l, k \right) \in A} w_{kl} o_{l} + \beta_k
+\end{equation}
+where $w_{kl} \in \mathbb{R}$ is the weight applied to the input $o_{l} \in \mathbb{R}$ and $\beta_k \in \mathbb{R}$ is a bias term. If the $k^{th}$ neuron is in the first layer, then the $o_{l}$ are just the inputs to the neural network.
+\section{Back-propogation}
+Neural networks are typically trained using an algorithm called back-propogation. Given a loss function $L: \mathbf{Z} \times \mathbf{Y} \rightarrow \mathbb{R}$, where $\mathbf{Z}$ is the co-domain of the network, the chain rule of differentiation implies:
+\begin{equation} \label{eq2}
+\frac{\partial L}{\partial w_{kj}} = \frac{\partial L}{\partial \psi _{k}} \frac{\partial \psi _{k}}{\partial w_{kj}} = \lambda _{k} o_{j}
+\end{equation}
+and
+\begin{equation} \label{eq3}
+\frac{\partial L}{\partial \beta_k} = \frac{\partial L}{\partial \psi_{k}} = \lambda_{k}
+\end{equation}
+where
+\begin{equation} \label{eq4}
+\lambda _{k} = \frac{\partial L}{\partial \psi _{k}} = \sum_{l : \left( k , l \right) \in A}\frac{\partial L}{\partial \psi _{l}} \frac{\partial \psi _{l}}{\partial o_{k}} \frac{\partial o_{k}}{\partial \psi _{k}} = \sum_{l : \left( k , l \right) \in A} \lambda _{l} w_{lk} \sigma_{k}' \left( \psi _{k} \right)
+\end{equation}
+This is the back-propagation equation which we can use to work backwards through the network to update parameters. Suppose we have a set of data $\{ \left(x_i ,y_i \right) \}_{i=1...m}$. Starting at terminal node $l$, we have:
+\begin{equation}
+\lambda_{li} = \frac{\partial L_i}{\partial \psi_{li}} = \frac{\partial L_i}{\partial z_{li}} \sigma_l' \left( \psi_{li} \right)
+\end{equation}
+which suggests the updates:
+\begin{equation}
+w_{kl} \leftarrow w_{kl} - \eta \sum_{i=1}^m \frac{\partial L_i}{\partial z_{li}} \sigma_l' \left( \psi_{li} \right) o_{li}
+= w_{kl} - \eta \sum_{i=1}^m \lambda_{li} o_{li}
+\end{equation}
+and
+\begin{equation}
+\beta_l \leftarrow \beta_l - \eta \sum_{i=1}^m \frac{\partial L_i}{\partial z_{li}} \sigma_l' \left( \psi_{li} \right)
+= \beta_l - \eta \sum_{i=1}^m \lambda_{li}
+\end{equation}
+where $\eta$ is the learning rate.
+Proceed recursively with the updates:
+\begin{equation} \label{eq8}
+w_{kj} \leftarrow w_{kj} - \eta \sum_{i=1}^m \frac{\partial L_i}{\partial w_{kj}}
+= w_{kj} - \eta \sum_{i=1}^m \lambda_{ki} o_{ji}
+\end{equation}
+and
+\begin{equation} \label{eq9}
+\beta_k \leftarrow \beta_k - \eta \sum_{i=1}^m \frac{\partial L_i}{\partial \beta_k}
+= \beta_k - \eta \sum_{i=1}^m \lambda_{ki}
+\end{equation}
+using equation~\eqref{eq4} to produce the summands.
+
+\section{Dropout}
+Dropout is a method for preventing overfitting. For each mini-batch during training, rather than using the linear predictor
+\begin{equation} \label{eq5}
+\psi _{k} = \sum_{l : \left( l , k \right) \in A} w_{kl} o_{l} + \beta_k
+\end{equation}
+in the $k^{th}$ neuron we instead use
+\begin{equation} \label{eq6}
+\psi _{k} = \sum_{l : \left( l , k \right) \in A} w_{kl} r_{kl} o_{l} + \beta_k
+\end{equation}
+where $r_{kl} \sim Bernoulli(p_{kl})$ and $p_{kl} \in \left[ 0,1 \right]$. This has the effect of changing the chain rule to:
+\begin{equation}
+\frac{\partial L}{\partial w_{kj}} = \frac{\partial L}{\partial \psi _{k}} \frac{\partial \psi _{k}}{\partial w_{kj}} = \lambda _{k} o_{j} r_{kj}
+\end{equation}
+where now
+\begin{equation}
+\lambda _{k} = \frac{\partial L}{\partial \psi _{k}} = \sum_{l : \left( k , l \right) \in A}\frac{\partial L}{\partial \psi _{l}} \frac{\partial \psi _{l}}{\partial o_{k}} \frac{\partial o_{k}}{\partial \psi _{k}} = \sum_{l : \left( k , l \right) \in A} \lambda _{l} w_{lk} r_{lk} \sigma_{k}' \left( \psi _{k} \right)
+\end{equation}
+Clearly if $r_{kj}=0$ then $\frac{\partial L}{\partial w_{kj}}=0$ and so $w_{kj}$ is not updated for this mini-batch.
+At test time, rather than use~\eqref{eq5}, we use:
+\begin{equation} \label{dropoutTest}
+\psi _{k} = \sum_{l : \left( l , k \right) \in A} w_{kl} p_{kl} o_{l} + \beta_k
+\end{equation}
+\section{Batch Normalization}
+One complication that arises in training deep neural networks is the fact that the distribution of the inputs to each layer change during training as parameters from previous layers are updated. This change is known as internal covariate shift. Ioffe and Szegedy (2015) introduced Batch Normalization to normalize layers' inputs during mini-batch training. There is more than one way to normalize; in the discussion below I deviate slightly from Ioffe and Szegedy (2015).
+Suppose we have a mini-batch $\{ x_i , y_i \}_{i=1...m}$. During the forward pass, rather that using
+\begin{equation}
+o_{ki} = \sigma_k \left( \psi_{ki} \right)
+\end{equation}
+we use
+\begin{equation}
+o_{ki} = \sigma_k \left( \widehat{\psi}_{ki} \right)
+\end{equation}
+where
+\begin{equation}
+\widehat{\psi}_{ki} = \gamma_k \frac{\psi_{ki} - \widehat{\mu}_k}{\sqrt{\widehat{\nu}_k^2 + \epsilon}} + \theta_k
+\end{equation}
+\begin{equation}
+\widehat{\mu}_k = \frac{1}{m} \sum_{j=1}^m \psi_{kj}
+\end{equation}
+\begin{equation}
+\widehat{\nu}_k^2 = \frac{1}{m} \sum_{j=1}^m \left( \psi_{kj} - \widehat{\mu}_k \right) ^2
+\end{equation}
+and $\gamma_k, \delta_k \in \mathbb{R}$ are additional parameters to learn. During the backwards pass we treat $\widehat{\mu}_k$ and $\widehat{\nu}_k^2$ as fixed. Batch Normalization introduces a new term to the equations of back-propogation:
+\begin{equation}
+\frac{\partial L_i}{\partial \widehat{\psi}_{ki}} = \sum_{l:\left(k,l\right) \in A} \frac{\partial L_i}{\partial \psi_{li}} \frac{\partial \psi_{li}}{\partial o_{ki}} \frac{\partial o_{ki}}{\partial \widehat{\psi}_{ki}} =
+\sum_{l:\left(k,l\right) \in A} \lambda_{li} w_{lk} \sigma_k' \left( \widehat{\psi}_{ki} \right)
+\end{equation}
+so that
+\begin{equation} \label{eq21}
+\lambda _{ki} = \frac{\partial L_i}{\partial \psi _{ki}}
+= \frac{\partial L_i}{\partial \widehat{\psi}_{ki}} \frac{\partial \widehat{\psi}_{ki}}{\partial \psi_{ki}}
+= \sum_{l:\left( k,l \right) \in A} \lambda_{li} w_{lk} \sigma_k' \left( \widehat{\psi}_{ki} \right) \frac{\gamma_k}{\sqrt{\widehat{\nu}_k^2 + \epsilon}}
+\end{equation}
+The parameter updates for $w_{kj}$ and $\beta_k$ remain the same as those in~\eqref{eq8} and~\eqref{eq9} except that now we use~\eqref{eq21} to calculate $\lambda_{ki}$.
+Additionally, we need to update the parameters $\gamma_k$ and $\theta_k$. The chain rule gives us:
+\begin{equation}
+\frac{\partial L_i}{\partial \gamma_k} = \frac{\partial L_i}{\partial \widehat{\psi}_{ki}} \frac{\partial \widehat{\psi}_{ki}}{\partial \gamma_k}
+= \sum_{l:\left(k,l\right) \in A} \lambda_{li} w_{lk} \sigma_k' \left( \widehat{\psi}_{ki} \right) \frac{\psi_{ki} - \widehat{\mu}_k}{\sqrt{\widehat{\nu}_k^2 + \epsilon}}
+\end{equation}
+and
+\begin{equation}
+\frac{\partial L_i}{\partial \theta_k} = \frac{\partial L_i}{\partial \widehat{\psi}_{ki}} \frac{\partial \widehat{\psi}_{ki}}{\partial \theta_k}
+= \sum_{l:\left(k,l\right) \in A} \lambda_{li} w_{lk} \sigma_k' \left( \widehat{\psi}_{ki} \right)
+\end{equation}
+so that updates take the form:
+\begin{equation}
+\gamma_k \leftarrow \gamma_k - \eta \sum_{i=1}^m \sum_{l:\left(k,l\right) \in A} \lambda_{li} w_{lk} \sigma_k' \left( \widehat{\psi}_{ki} \right) \frac{\psi_{ki} - \widehat{\mu}_k}{\sqrt{\widehat{\nu}_k^2 + \epsilon}}
+\end{equation}
+and
+\begin{equation}
+\theta_k \leftarrow \theta_k - \eta \sum_{i=1}^m \sum_{l:\left(k,l\right) \in A} \lambda_{li} w_{lk} \sigma_k' \left( \widehat{\psi}_{ki} \right)
+\end{equation}
+
+\section{Variations of Stochastic Gradient Descent}
+\subsection{Implicit SGD}
+\subsection{Momentum}
+For the first mini-batch, we use the updates in~\eqref{eq3} and~\eqref{eq8}. This results in a change to the parameters of $\Delta w$ and $\Delta \beta$.
+Starting with the second mini-batch, we now follow the updates:
+\begin{align}
+\Delta w_{kj} \leftarrow \alpha \Delta w_{kj} - \eta \frac{\partial L}{\partial w_{kj}} && and && \Delta \beta_k \leftarrow \alpha \Delta \beta_k - \eta \frac{\partial L}{\partial \beta_k}
+\end{align}
+followed by
+\begin{align}
+w \leftarrow w + \Delta w && and && \beta \leftarrow \beta + \Delta \beta
+\end{align}
+\end{document}

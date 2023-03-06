@@ -1,0 +1,175 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\argmin}{argmin} 
+\usepackage{amsfonts}
+\usepackage{geometry}
+\usepackage{mathtools}
+\usepackage{listings}
+\usepackage{amsthm}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\usepackage{parskip}
+\author{Greg Strabel}
+\title{Classical Mechanics}
+\begin{document}
+\maketitle
+\section{Preliminaries}
+\begin{definition}[Mechanical System]
+A \textbf{Mechanical System} is a tuple $\left( M , L \right)$ where
+\begin{enumerate}
+\item $M$ is the configuration space - a manifold in a vector space of generalized coordinates
+\item $L$ is the Lagrangian - a function $L: TM \times \mathbb{R}_t \rightarrow \mathbb{R}$ where $TM$ is the tangent bundle to $M$ and $\mathbb{R}_t \subseteq \mathbb{R}$ 
+\end{enumerate}
+\end{definition}
+
+In many applications, the Lagrangian is equal to the kinetic energy minus the potential energy of the system.
+
+\begin{definition}[Principle of Stationary Action]
+Given time instances $t_1$ and $t_2$ ($t_1 < t_2$), the time evolution of the mechanical system $\left( M , L \right)$ is given by a path $q_0 : \left[ t_1, t_2 \right] \rightarrow M$ that minimizes
+\begin{equation}
+A \left( q \right) = \int_{t_1}^{t_2} L \left( q, \dot{q}, t \right) dt
+\end{equation}
+The path $q_0$ is a \textbf{stationary point}.
+\end{definition}
+
+\section{Deriving Lagrange's Equations}
+
+Consider adding a variation $\eta$ to a stationary point $q_0$. Then
+\begin{equation}
+\begin{split}
+0 & = \frac{d}{d \epsilon} A \left( q_0 + \epsilon \eta \right) \rvert_{\epsilon = 0}
+= \frac{d}{d \epsilon} \int_{t_1}^{t_2} L \left( q_0 + \epsilon \eta, \dot{q}_0 + \epsilon \dot{\eta}, t \right) dt \rvert_{\epsilon = 0} \\
+& = \int_{t_1}^{t_2} \left[ L_q \left( q, \dot{q}, t \right) \eta + L_{\dot{q}} \left( q, \dot{q}, t \right) \dot{\eta} \right] dt \\
+& = \int_{t_1}^{t_2} L_q \left(q,\dot{q},t \right) \eta dt + L_{\dot{q}} \left( q, \dot{q} , t \right) \eta \rvert_{t_1}^{t_2}
+ - \int_{t_1}^{t_2} \frac{\partial L_{\dot{q}}}{\partial t}  \left( q, \dot{q} , t \right) \eta dt \\
+ & = \int_{t_1}^{t_2} \left[ L_q \left( q, \dot{q}, t \right) - \frac{\partial L_{\dot{q}}}{\partial t} \left( q, \dot{q}, t \right) \right] \eta dt
+ \end{split}
+\end{equation}
+
+By the fundamental lemma of the calculus of variations, it follows that
+\begin{equation}
+L_q \left( q, \dot{q}, t \right) = \frac{\partial L_{\dot{q}}}{\partial t} \left( q, \dot{q}, t \right)
+\end{equation}
+
+
+\section{Deriving Hamilton's Equations}
+Consider a physical system comprised of trajectories $q$ in configuration space, velocities $\dot{q}$ and Lagrangian $L \left( q , \dot{q} \right)$. The conjugate momenta to the trajectories is
+\begin{equation}
+p = \frac{\partial L}{\partial \dot{q}} \left( q, \dot{q} \right)
+\end{equation}
+Under certain regularity conditions (the conditions of the Inverse Function Theorem), we may invert this map to recover $\dot{q}$ from $p$ and $q$:
+\begin{equation}
+\dot{q} = f \left( q, p \right)
+\end{equation}
+The Hamiltonian for this system is
+\begin{equation}
+H \left( q, p \right) = \sum_i p_i f_i \left( q, p \right)
+- L \left( q , f \left( q, p \right) \right)
+\end{equation}
+By adding a variation to individual components of the phase space, we find 
+\begin{equation}
+\begin{split}
+\frac{\partial H}{\partial p_j} \eta & =\frac{\partial}{\partial \epsilon} H \left( q , p_{-j} , p_j + \epsilon \eta \right) \rvert_{\epsilon = 0} \\
+& = \sum_i p_i \frac{\partial f_i}{\partial p_j} \eta +
+f_j \eta
+- \sum_i \frac{\partial L}{\partial \dot{q}_i} \frac{\partial f_i}{\partial p_j} \eta \\
+& = f_j \eta
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\frac{\partial H}{\partial q_j} \eta & =\frac{\partial}{\partial \epsilon} H \left( q_{-j} , q_j + \epsilon \eta , p \right) \rvert_{\epsilon = 0} \\
+& = \sum_i p_i \frac{\partial f_i}{\partial q_j} \eta
+- \sum_i \frac{\partial L}{\partial \dot{q}_i} \frac{\partial f_i}{\partial q_j} \eta
+- \frac{\partial L}{\partial q_j} \eta \\
+& = - \frac{\partial L}{\partial q_j} \eta
+\end{split}
+\end{equation}
+It follows that
+\begin{equation}
+\frac{\partial H}{\partial p_j} = f_j = \dot{q_j}
+\end{equation}
+In addition, if the trajectories through phase space minimize the action of the system, then
+\begin{equation}
+\frac{\partial L}{\partial q_i} \left( q , \dot{q} \right) = \frac{d}{dt} \frac{\partial L}{\partial \dot{q}_i} \left( q , \dot{q} \right)
+\end{equation}
+so that
+\begin{equation}
+\frac{\partial H}{\partial q_i} = - \dot{p_i}
+\end{equation}
+We have derived Hamilton's equations:
+\begin{align}
+\frac{\partial H}{\partial p_j} = \dot{q_j} &&
+\textup{and} &&
+\frac{\partial H}{\partial q_i} = - \dot{p_i}
+\end{align}
+\section{Poisson Brackets}
+Two equivalent definitions of the Poisson Bracket:
+\begin{equation}
+\{ F , G \} = \sum_i \frac{\partial F}{\partial q_i} \frac{\partial G}{\partial p_i} - \frac{\partial F}{\partial p_i} \frac{\partial G}{\partial q_i}
+\end{equation}
+Axiomatic definition of Poisson Bracket:
+\begin{enumerate}
+\item Anticommutativity: $\forall f,g : \{f,g\} = - \{g,f\}$
+\item Linearity: $\forall a,b \in \mathbb{R},\forall f,g,h : \{ af + bg , h \} = a\{f,h \} + b\{ g, h \}$
+\item Leibniz's Rule: $\forall f,g,h: \{ fg ,h \} = f\{g,h \} + g\{f,h \}$
+\item Canonical Coordinates: $\forall i,j: \{q_i ,q_j \} = 0, \{ p_i , p_j \} = 0, \{q_i , p_j \} = \delta_{ij}$
+\end{enumerate}
+\section{Curl and Divergence}
+Suppose $\overrightarrow{v} = \left( f \left( x,y,z \right) , g \left( x,y,z \right), h \left( x,y,z \right) \right)$ is a vector field such that $\overrightarrow{\bigtriangledown} \cdot \overrightarrow{v} = f_x + g_y + h_z = 0$. Then there is another vector field $\overrightarrow{w}$, such that $\overrightarrow{v} = \overrightarrow{\bigtriangledown} \times \overrightarrow{w}$. Let 
+$$\overrightarrow{w}_1 = \left( 0,
+\int_0^x h \left( t , y , z \right) dt, 
+- \int_0^x g \left( t, y, z \right) dt
+\right)$$
+Now
+\begin{equation}
+\begin{split}
+\overrightarrow{\bigtriangledown} \times \overrightarrow{w}_1 & = \left(
+\frac{- \partial \int_0^x g \left( t, y, z \right) dt}{\partial y} - \frac{\partial \int_0^x h \left( t , y , z \right) dt}{\partial z},
+\frac{\partial \int_0^x g \left( t, y, z \right) dt}{\partial x},
+\frac{\partial \int_0^x h \left( t , y , z \right) dt}{\partial x}
+\right) \\
+& = \left(
+- \int_0^x \left[ \frac{\partial g}{\partial y} \left( t,y,z \right) + \frac{\partial h}{\partial x} \left( t,y,z \right) \right] dt,
+g \left( x,y,z \right),
+h \left( x,y,z \right)
+\right) \\
+& = \left( A \left( x,y,z \right) ,
+g \left( x,y,z \right),
+h \left( x,y,z \right)
+\right)
+\end{split}
+\end{equation}
+where
+\begin{equation}
+A \left( x,y,z \right) = - \int_0^x \left[ \frac{\partial g}{\partial y} \left( t,y,z \right) + \frac{\partial h}{\partial x} \left( t,y,z \right) \right] dt
+\end{equation}
+Let
+\begin{equation}
+\overrightarrow{v}_1 = \overrightarrow{v} - \overrightarrow{\bigtriangledown} \times \overrightarrow{w}_1 = \left( f - A, 0 , 0 \right)
+\end{equation}
+Then
+\begin{equation}
+\frac{\partial}{\partial x} \left(f - A \right) = \overrightarrow{\bigtriangledown} \cdot \overrightarrow{v}_1 = \overrightarrow{\bigtriangledown} \cdot \overrightarrow{v} - \overrightarrow{\bigtriangledown} \cdot \overrightarrow{\bigtriangledown} \times \overrightarrow{w}_1 = 0
+\end{equation}
+so that $f-A$ does NOT depend on $x$. Let $k \left( y,z \right) = f-A$ and
+\begin{equation}
+\overrightarrow{w}_2 = \left( 0,0, \int_0^y k \left( t, z \right) dt \right)
+\end{equation}
+Then
+\begin{equation}
+\overrightarrow{\bigtriangledown} \times \overrightarrow{w}_2 = \left( k \left( y,z \right) , 0 , 0 \right) = \left( f-A,0,0 \right)
+\end{equation}
+Finally,
+\begin{equation}
+\begin{split}
+\overrightarrow{\bigtriangledown} \times \left( \overrightarrow{w}_1 + \overrightarrow{w}_2 \right) & =
+\overrightarrow{\bigtriangledown} \times \overrightarrow{w}_1 + \overrightarrow{\bigtriangledown} \times \overrightarrow{w}_2 \\
+& = \left( A , g, h \right) + \left( f - A, 0 , 0 \right) \\
+& = \left( f,g,h \right)
+\end{split}
+\end{equation}
+so that $\overrightarrow{v} = \overrightarrow{\bigtriangledown} \times \left( \overrightarrow{w}_1 + \overrightarrow{w}_2 \right)$
+\end{document}

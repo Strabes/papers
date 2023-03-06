@@ -1,0 +1,235 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\argmin}{argmin}
+\usepackage{mathtools}
+\usepackage{amsfonts}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\DontPrintSemicolon
+\usepackage{varioref}
+\usepackage{hyperref}
+\labelformat{algocf}{\textit{Algorithm}\,(#1)}
+\author{Greg Strabel}
+\title{Generalized Linear Models}
+\begin{document}
+\maketitle
+\section{The Overdispersed Exponential Family}
+The overdispersed exponential family is the class of probability measures that have density functions of the form
+\begin{equation}
+f_Y \left( y | \theta, \tau \right) = h \left( y , \tau \right) \exp \left( \frac{b \left( \theta \right)^T T \left( y \right) - A \left( \theta \right)}{d \left( \tau \right)} \right)
+\end{equation}
+Differentiating $f$ with respect to $\theta_i$
+\begin{equation}
+\frac{\partial f_Y}{\partial \theta_i} = f_Y \left( y | \theta, \tau \right) \frac{1}{d \left( \tau \right)} \left[ \sum_{j=1}^m \frac{\partial b_j}{\partial \theta_i} T_j \left( y \right) - \frac{\partial A}{\partial \theta_i} \right]
+\end{equation}
+so that
+\begin{equation}
+0 = \int \frac{\partial f_Y}{\partial \theta_i} dy = \frac{1}{d \left( \tau \right)} \left[ \sum_{j=1}^m \frac{\partial b_j}{\partial \theta_i} \mathbb{E} T_j \left( y \right) - \frac{\partial A}{\partial \theta_i} \right]
+\end{equation}
+from which it follows that
+\begin{equation} \label{mean}
+\frac{\partial A}{\partial \theta_i} = \sum_{j=1}^m \frac{\partial b_j}{\partial \theta_i} \mathbb{E} T_j \left( y \right)
+\end{equation}
+Taking the second partial derivative of $f$ with respect to $\theta_i$ yields
+\begin{equation}
+\begin{split}
+\frac{\partial^2 f_Y}{\partial \theta_i^2} = & \frac{\partial f_Y}{\partial \theta_i} \left( y | \theta, \tau \right) \frac{1}{d \left( \tau \right)} \left[ \sum_{j=1}^m \frac{\partial b_j}{\partial \theta_i} T_j \left( y \right) - \frac{\partial A}{\partial \theta_i} \right] \\
+&+ f_Y \left( y | \theta, \tau \right) \frac{1}{d \left( \tau \right)} \left[ \sum_{j=1}^m \frac{\partial^2 b_j}{\partial \theta_i^2} T_j \left( y \right) - \frac{\partial^2 A}{\partial \theta_i^2} \right]
+\end{split}
+\end{equation}
+from which it follows that
+\begin{equation}
+\begin{split}
+0 & = \int \frac{\partial^2 f_Y}{\partial \theta_i^2} dy = \int f_Y \left( y | \theta, \tau \right) \left( \frac{1}{d \left( \tau \right)} \left[ \sum_{j=1}^m \frac{\partial b_j}{\partial \theta_i} T_j \left( y \right) - \frac{\partial A}{\partial \theta_i} \right] \right)^2 dy \\
+& + \int f_Y \left( y | \theta, \tau \right) \frac{1}{d \left( \tau \right)} \left[ \sum_{j=1}^m \frac{\partial^2 b_j}{\partial \theta_i^2} T_j \left( y \right) - \frac{\partial^2 A}{\partial \theta_i^2} \right] dy \\
+& = Var \left( \frac{1}{d \left( \tau \right)} \left[ \sum_{j=1}^m \frac{\partial b_j}{\partial \theta_i} T_j \left( y \right) \right] \right) + \frac{1}{d \left( \tau \right)} \left[ \sum_{j=1}^m \frac{\partial^2 b_j}{\partial \theta_i^2} \mathbb{E} T_j \left( y \right) - \frac{\partial^2 A}{\partial \theta_i^2} \right]
+\end{split}
+\end{equation}
+Hence,
+\begin{equation} \label{variance}
+Var \left( \frac{1}{d \left( \tau \right)} \left[ \sum_{j=1}^m \frac{\partial b_j}{\partial \theta_i} T_j \left( y \right) \right] \right) = \frac{1}{d \left( \tau \right)} \left[ \frac{\partial^2 A}{\partial \theta_i^2} - \sum_{j=1}^m \frac{\partial^2 b_j}{\partial \theta_i^2} \mathbb{E} T_j \left( y \right) \right]
+\end{equation}
+When $b$ is the identity function,~\eqref{mean} implies that
+\begin{equation}
+\mathbb{E} T_i \left( y \right) = \frac{\partial A}{\partial \theta_i}
+\end{equation}
+and~\eqref{variance} implies
+\begin{equation}
+Var \left( T_i \left( y \right) \right) = d \left( \tau \right) \frac{\partial^2 A}{\partial \theta_i^2}
+\end{equation}
+If both $b$ and $T$ are the identity function, then the model is in $canonical$ form and $\theta$ is the $canonical\ parameter$, in which case $\mathbb{E} y_i = \frac{\partial A}{\partial \theta_i} \left( \theta \right)$.
+
+\section{Tweedie Distribution}
+If both $b$ and $T$ are the identity function, $\sigma^2 \equiv d \left( \tau \right)$ and
+\begin{equation}
+A \left( \theta \right) = 
+\begin{cases}
+\frac{1}{2-p} \left( \theta \left( 1 - p \right) \right) ^ \frac{p-2}{p-1} &
+     \text{p $\in \left( -\infty , 0 \right] \cup \left( 1 , 2 \right) \cup \left( 2 , \infty \right)$}\\
+- \log \left( - \theta \right) & \text{p=2}\\
+e^{\theta} & \text{p=1}
+\end{cases}
+\end{equation}
+then $Y \sim Tw_p \left( \mu, \sigma^2 \right)$, where
+\begin{equation}
+\mu \equiv \mathbb{E} Y =
+\frac{\partial A}{\partial \theta} = 
+\begin{cases}
+\left( \theta \left( 1 - p \right) \right)^{\frac{1}{1-p}} &
+    \text{p $\in \left( -\infty , 0 \right] \cup \left( 1 , 2 \right) \cup \left( 2 , \infty \right)$}\\
+- \theta^{-1} & \text{p=2}\\
+e^{\theta} & \text{p=1}
+\end{cases}
+\end{equation}
+
+Note that
+\begin{equation}
+\begin{split}
+\frac{\partial^2 A}{\partial \theta^2} & = 
+\begin{cases}
+\left( \theta \left( 1 - p \right) \right)^{\frac{p}{1-p}} &
+  \text{p $\in \left( -\infty , 0 \right] \cup \left( 1 , 2 \right) \cup \left( 2 , \infty \right)$}\\
+\theta^{-2} & \text{p=2}\\
+e^{\theta} & \text{p=1}
+\end{cases} \\
+& = \mu^p
+\end{split}
+\end{equation}
+
+so that
+\begin{equation}
+Var \left( Y \right) = \sigma^2 \mu^p
+\end{equation}
+
+When $p \in \left( 1 , 2 \right)$, the Tweedie distribution is the marginal distribution of a compound Poisson Gamma distribution. One can see this by comparing the characteristic functions of the two distributions. First we calculate the characteristic function of the Tweedie distribution:
+\begin{equation}
+\begin{split}
+\mathbb{E} e^{itY} & = \int e^{ity} \exp \left\{ \frac{\theta y - A \left( \theta \right)}{\sigma^2} \right\} h \left( y, \tau \right) dy \\
+& = \int \exp \left\{ \frac{\left( \theta + it \sigma^2 \right)  y - A \left( \theta + it \sigma^2 \right)}{\sigma^2} \right\}
+\exp \left\{ \frac{A \left( \theta + it \sigma^2 \right) - A \left( \theta \right)}{\sigma^2} \right\} h \left( y , \tau \right) dy \\
+& = \exp \left\{ \frac{A \left( \theta + it \sigma^2 \right) - A \left( \theta \right)}{\sigma^2} \right\}
+\end{split}
+\end{equation}
+
+Now
+\begin{equation}
+\begin{split}
+A \left( \theta + it \sigma^2 \right) - A \left( \theta \right) & =
+\frac{1}{2-p} \left[ \left( \left( \theta + it \sigma^2 \right) \left( 1 - p \right) \right)^{\frac{p-2}{p-1}}
+ - \left( \theta \left( 1 - p \right) \right)^{\frac{p-2}{p-1}} \right] \\
+ & = \frac{1}{2-p} \left[ \left( \left( \frac{\mu^{1-p}}{1-p} + it \sigma^2 \right) \left( 1 - p \right) \right)^{\frac{p-2}{p-1}}
+ - \left( \frac{\mu^{1-p}}{1-p} \left( 1 - p \right) \right)^{\frac{p-2}{p-1}} \right] \\
+ & = \frac{1}{2-p} \left[ \left( \mu^{1-p} + it \sigma^2 \left( 1 - p \right) \right)^{\frac{p-2}{p-1}}
+ - \left( \mu^{1-p} \right)^{\frac{p-2}{p-1}} \right] \\
+ & = \frac{\mu^{2-p}}{2-p} \left[ \left( 1 - it\sigma^2 \frac{p-1}{\mu^{1-p}} \right)^{\frac{p-2}{p-1}} - 1\right]
+\end{split}
+\end{equation}
+
+It follows that
+\begin{equation}
+\mathbb{E} e^{itY} = \exp \left\{ \frac{\mu^{2-p}}{\left( 2 - p \right) \sigma^2} \left[ \left( 1 - it\sigma^2 \frac{p-1}{\mu^{1-p}} \right)^{\frac{p-2}{p-1}} - 1\right] \right\}
+\end{equation}
+
+Now consider the case of a compound Poisson Gamma distribution $C = \sum_{i=1}^N Z_i$ where $N \sim Poisson \left( \lambda \right)$ and $Z_i \sim Gamma \left( \alpha, \beta \right)$. The characteristic function of $C$ is
+\begin{equation}
+\begin{split}
+\mathbb{E} e^{itC} & = \mathbb{E}_N \left( \mathbb{E}_X e^{itX} \right)^N \\
+& = \mathbb{E}_N \left( 1 - \frac{it}{\beta} \right)^{-\alpha N} \\
+& = \exp \left\{ \lambda \left[ \left( 1 - \frac{it}{\beta} \right)^{-\alpha} - 1 \right] \right\}
+\end{split}
+\end{equation}
+
+Setting
+\begin{equation}
+\lambda = \frac{\mu^{2-p}}{\left( 2- p  \right) \sigma^2}
+\end{equation}
+\begin{equation}
+\alpha = \frac{2-p}{p-1}
+\end{equation}
+and
+\begin{equation}
+\beta = \frac{\mu^{1-p}}{\left( p - 1 \right) \sigma^2}
+\end{equation}
+we find that
+\begin{equation}
+\mathbb{E} e^{itC} = \exp \left\{ \frac{\mu^{2-p}}{\left( 2 - p \right) \sigma^2} \left[ \left( 1 - it\sigma^2 \frac{p-1}{\mu^{1-p}} \right)^{\frac{p-2}{p-1}} - 1\right] \right\}
+\end{equation}
+
+Thus, when $p \in \left( 1 , 2 \right)$, the Tweedie distribution is the marginal distribution of a compound Poisson Gamma distribution. Importantly, this implies that when $p \in \left( 1 , 2 \right)$, the Tweedie distribution has a point mass at zero and
+\begin{equation}
+\mathbb{P} \left\{ Y = 0 \right\} = \exp \left\{ \frac{\mu^{2-p}}{\left( p - 2 \right) \sigma^2} \right\}
+\end{equation}
+
+\section{Generalized Linear Models}
+In generalized linear models, we assume that the response $Y \in \mathbb{R}^K$ comes from the overdispersed exponential family, that $\theta$ is the canonical parameter, $T$ is the identity function and that $\theta = f \left( \eta \right)$ where $\eta = \left( \mathbb{I}_M \otimes X \right)^T \beta$, $f: \mathbb{R}^M \rightarrow \mathbb{R}^K$, $X \in \mathbb{R}^P$ is a set of exogenous predictors and $\beta \in \mathbb{R}^{PM}$. The log-likelihood of a single observation becomes:
+\begin{equation}
+L = \log h \left( Y , \tau \right) + \frac{1}{d \left( \tau \right)} \left[
+Y^T f \left( \left( \mathbb{I}_M \otimes X \right)^T \beta \right) - A \left( f \left( \left( \mathbb{I}_M \otimes X \right)^T \beta \right) \right)
+\right]
+\end{equation}
+Note that
+\begin{equation}
+\frac{\partial L}{\partial \eta} = \frac{1}{d \left( \tau \right)} \left[ Y^T - \frac{\partial A}{\partial \theta} \right] \frac{\partial f}{\partial \eta},
+\end{equation}
+\begin{equation}
+\frac{\partial L}{\partial \beta} = \frac{1}{d \left( \tau \right)} \left[ Y^T - \frac{\partial A}{\partial \theta} \right] \frac{\partial f}{\partial \eta} \left( \mathbb{I}_M \otimes X \right)^T
+\end{equation}
+and
+\begin{equation}
+\frac{\partial^2 L}{\partial \beta \partial \beta'} = \frac{\partial \eta}{\partial \beta}^T
+\frac{\partial^2 L}{\partial \eta \partial \eta'} \frac{\partial \eta}{\partial \beta} +
+\frac{\partial L}{\partial \eta} \frac{\partial^2 \eta}{\partial \beta \partial \beta'}
+\end{equation}
+Since $\mathbb{E} \left[ \frac{\partial L}{\partial \eta} \mid X \right] = 0$ and
+\begin{equation}
+\frac{\partial^2 L}{\partial \eta \partial \eta'} = -\frac{1}{d \left( \tau \right)} \left[
+\frac{\partial f}{\partial \eta}^T \frac{\partial^2 A}{\partial \theta \partial \theta'} \frac{\partial f}{\partial \eta}
+\right] +
+\frac{1}{d \left( \tau \right)} \sum_{k=1}^K \left[ Y_k - \frac{\partial A}{\partial \theta_k} \right] \frac{\partial^2 f_k}{\partial \eta \partial \eta'}
+\end{equation}
+which implies that
+\begin{equation}
+\mathbb{E} \left[ \frac{\partial^2 L}{\partial \eta \partial \eta'} \mid X \right] = -\frac{1}{d \left( \tau \right)}
+\frac{\partial f}{\partial \eta}^T \frac{\partial^2 A}{\partial \theta \partial \theta'} \frac{\partial f}{\partial \eta}
+\end{equation}
+we have
+\begin{equation}
+- \mathbb{E} \left[ \frac{\partial^2 L}{\partial \beta \partial \beta'} \mid X \right] =
+\frac{1}{d \left( \tau \right)}
+\frac{\partial \eta}{\partial \beta}^T \frac{\partial f}{\partial \eta}^T \frac{\partial^2 A}{\partial \theta \partial \theta'} \frac{\partial f}{\partial \eta} \frac{\partial \eta}{\partial \beta}
+\end{equation}
+
+Given a dataset $\{ x_i, y_i \}_{i=1...n}$, the Newton-Raphson algorithm suggests solving
+\begin{equation}
+\sum_{i=1}^n \frac{1}{d \left( \tau \right)}
+\frac{\partial \eta_i}{\partial \beta}^T \frac{\partial f_i}{\partial \eta}^T \frac{\partial^2 A_i}{\partial \theta \partial \theta'} \frac{\partial f_i}{\partial \eta} \frac{\partial \eta_i}{\partial \beta} \left( \beta^* - \beta \right) =
+\sum_{i=1}^n \frac{1}{d \left( \tau \right)} \frac{\partial \eta_i}{\partial \beta}^T \frac{\partial f_i}{\partial \eta}^T \left[ Y_i - \frac{\partial A_i}{\partial \theta}^T \right] 
+\end{equation}
+for $\beta^*$.
+Setting
+\begin{equation}
+w_i = \frac{\partial f_i}{\partial \eta}^T \frac{\partial^2 A_i}{\partial \theta \partial \theta'} \frac{\partial f_i}{\partial \eta}
+\end{equation}
+this becomes
+\begin{equation}
+\sum_{i=1}^n \left( \mathbb{I}_M \otimes x_i \right) w_i \left( \mathbb{I}_M \otimes x_i \right)^T \beta^* =
+\sum_{i=1}^n \left( \mathbb{I}_M \otimes x_i \right) w_i
+\left[ \eta_i + w_i^{-1} \frac{\partial f_i}{\partial \eta}^T \left[ y_i - \frac{\partial A_i}{\partial \theta}^T \right] \right]
+\end{equation}
+which is of the form of a weighted least squares regression where the regressors are $\left( \mathbb{I}_M \otimes x_i \right)$, the regressands are $\eta_i + w_i^{-1} \frac{\partial f_i}{\partial \eta}^T \left[ y_i - \frac{\partial A_i}{\partial \theta}^T \right]$ and the weights are $w_i$. Hence, the maximum likelihood estimator $\widehat{\beta}$ can be found using iteratively reweighted least squares.
+In the preceding presentation
+\begin{equation}
+\mathbb{E} \left[ Y | X \right] = \frac{\partial A}{\partial \theta}^T \left( f \left( \left( \mathbb{I}_M \otimes X \right)^T \beta \right) \right)
+\end{equation}
+If we define $g$ implicitly by the equation
+\begin{equation}
+g^{-1} \vcentcolon = \frac{\partial A}{\partial \theta}^T \circ f
+\end{equation}
+then we recover the common presentation of generalized models that start with a $link$ $function$ $g$ such that
+\begin{equation}
+g \left( \mathbb{E} \left[ Y \mid X \right] \right) = \left( \mathbb{I}_M \otimes X \right)^T \beta
+\end{equation}
+
+\end{document}

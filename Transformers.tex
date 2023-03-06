@@ -1,0 +1,76 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\argmin}{argmin} 
+\usepackage{amsfonts}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsthm}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\usepackage{geometry}
+\usepackage{mathtools}
+\usepackage{listings}
+\usepackage{physics}
+\usepackage{parskip}
+\usepackage{hyperref}
+\author{Greg Strabel}
+\title{Transformers}
+\begin{document}
+\maketitle
+
+\section{Preliminaries}
+
+Given two matrices $A \in \mathbb{R}^{n \times m}$ and $B \in \mathbb{R}^{m \times k}$
+
+\begin{equation}
+\left( XY \right)_{ij} = \sum_{l=1}^m X_{il}Y_{lj} = X_{i \cdot} Y_{\cdot j}
+\end{equation}
+
+Therefore
+\begin{equation}
+\left( XY \right)_{\cdot j} = \sum_{l=1}^m Y_{lj} X_{\cdot l}
+\end{equation}
+so that the columns of $XY$ are linear combinations of the columns of $X$ and
+\begin{equation}
+\left( XY \right)_{i \cdot} = \sum_{l=1}^m X_{il} Y_{l \cdot}
+\end{equation}
+so that the rows of $XY$ are linear combinations of the rows of $Y$.
+
+\section{Dot-Product Attention}
+
+\begin{definition}[Dot-Product Attention] Given $Q \in \mathbb{R}^{d_l \times d_k}$, $K \in \mathbb{R}^{d_s \times d_k}$ and $V \in \mathbb{R}^{d_s \times d_v}$
+
+\begin{equation}
+\mathrm{Attention} \left( Q,K,V \right) = \mathrm{softmax} \left( \frac{QK^T}{\sqrt{d_k}} \right) V \in \mathbb{R}^{d_l \times d_v}
+\end{equation}
+\end{definition}
+
+\section{Multi-head Attention}
+Given input matrices $X_Q \in \mathbb{R}^{d_l \times d_{eq}}$, $X_K \in \mathbb{R}^{d_s \times d_{ek}}$ and $X_V \in \mathbb{R}^{d_s \times d_{ev}}$ and weight matrices
+\begin{gather}
+\nonumber \{W_Q^i \in \mathbb{R}^{d_e \times d_k} \}_{i=1}^h \\
+\{W_K^i \in \mathbb{R}^{d_e \times d_k} \}_{i=1}^h \\
+\nonumber \{W_V^i \in \mathbb{R}^{d_e \times d_v} \}_{i=1}^h \\
+W_O \in \mathbb{R}^{hd_v \times d_o}
+\end{gather}
+we define
+\begin{gather}
+\nonumber Q^i = X_QW_Q^i \in \mathbb{R}^{d_l \times d_k} \\
+K^i = X_KW_K^i \in \mathbb{R}^{d_s \times d_k} \\
+\nonumber V^i = X_VW_V^i \in \mathbb{R}^{d_s \times d_v}
+\end{gather}
+
+\begin{equation}
+A^i = \mathrm{Attention} \left(Q^i,K^i,V^i \right) \in \mathbb{R}^{d_l \times d_v}
+\end{equation}
+
+\begin{equation}
+\mathrm{Multihead}\left(X_Q, X_K, X_V \right) =
+\mathrm{concat} \left( A_1, ... , A_h \right)W_O
+\in \mathbb{R}^{d_l \times d_o}
+\end{equation}
+
+In \href{https://arxiv.org/pdf/1706.03762.pdf}{Attention Is All You Need}
+
+\end{document}

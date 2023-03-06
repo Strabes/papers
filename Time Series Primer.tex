@@ -1,0 +1,728 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{multicol}
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\DontPrintSemicolon
+\usepackage{varioref}
+\usepackage{hyperref}
+\labelformat{algocf}{\textit{Algorithm}\,(#1)}
+\usepackage{mathtools}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+\author{Greg Strabel}
+\title{Basics of Time Series}
+\begin{document}
+\maketitle
+\section{Preliminaries}
+{\bf Definition}: A time series $\{ \epsilon_t \}$ is $White\ Noise$, $WN \left( 0, \sigma_2 \right)$, if it has finite first and second moments satisfying:
+$$\mathbb{E} \epsilon_t = 0$$
+\begin{equation}
+\mathbb{E} \epsilon_t \epsilon_s = \left\{ \begin{matrix}
+\sigma^2 & t=s \\
+0 & t\neq s
+\end{matrix} \right.
+\end{equation}
+{\bf Definition}: Given a time series $\{Y_t\}$ the $lag\ operator\ L$ is defined by the relation $$L Y_t = Y_{t-1}$$
+With a slight, but common, abuse of notation, given vectors $\phi \in \mathbb{C}^p$ and $\theta \in \mathbb{C}^q$, the autoregressive and moving average lag polynomials $\phi \left( L \right)$ and $\theta \left( L \right)$ are defined as
+\begin{equation}
+\phi \left( L \right) = 1 - \sum_{i=1}^p \phi_i L^i
+\;\;\;\;\;\;\;
+\theta \left( L \right) = 1 + \sum_{i=1}^q \theta_i L^i
+\end{equation}
+respectively.
+\\*
+\\*
+{\bf Definition}: A time series $\{ Y_t \}$ is $covariance\ stationary$ or $weakly\ stationary$ if it has finite first and second moments satisfying:
+$$\mathbb{E} Y_t = \mu \;\;\;\;\;\; \forall t \in \mathbb{Z}$$
+$$\mathbb{E} \left( Y_t - \mu \right) \left( Y_{t-k} - \mu \right) = \gamma_k \;\;\;\;\;\; \forall t,k \in \mathbb{Z}$$
+\\*
+Given a time series $\{X_t\}$ satisfying $\mathbb{E} | X_t | < M$ and $\mathbb{E} | X_t X_s | < M$ and $| \phi | < 1$, we can form another time series
+$$Y_t = \sum_{i=0}^{\infty} \phi^i X_{t-i}$$
+which exists as an $L^2$ limit since
+\begin{equation}
+\begin{split}
+\mathbb{E} \left[ \sum_{i=0}^k \phi^i X_{t-i} - \sum_{j=0}^m \phi^j X_{t-j} \right]^2
+& = \mathbb{E} \left[ \sum_{i=k \wedge m + 1}^{k \vee m} \phi^i X_{t-i} \right]^2 \\
+& = \sum_{j=k \wedge m + 1}^{k \vee m} \sum_{i=k \wedge m + 1}^{k \vee m} \phi^j \phi^i \mathbb{E} X_{t-j} X_{t-i} \\
+& \leq M \phi^{k \wedge m + 1} \sum_{i=0}^{\left( k \vee m \right) - \left( k \wedge m \right) - 1} \sum_{j=0}^{\left( k \vee m \right) - \left( k \wedge m \right) - 1} \phi^i \phi^j \\
+& = \phi^{k \wedge m + 1} M \left( \frac{1- \phi^{\left( k \vee m \right) - \left( k \wedge m \right)}}{1 - \phi} \right)^2 \\
+& \rightarrow 0 \; \; \textup{as} \; \; k \wedge m \rightarrow \infty
+\end{split}
+\end{equation}
+Notice that $X_t = \left( 1 - \phi L \right) Y_t$ so that we have effectively defined an inverse to $1-\phi L$:
+\begin{equation}
+\left( 1 - \phi L \right)^{-1} : \{ X_t \} \mapsto \left\{ \sum_{i=0}^{\infty} \phi^i X_{t-i} \right\}
+\end{equation}
+This mapping is the workhorse of covariance stationary ARMA models.
+\\*
+Since $L^2$ is a pseudo-Hilbert space, we can also show that:
+$$\mathbb{E} Y_t = \sum_{i=0}^\infty \phi^i \mathbb{E} X_{t-i}$$
+and
+$$\mathbb{E} Y_t Y_s = \sum_{i=0}^\infty \sum_{j=0}^\infty \phi^{i+j} \mathbb{E} X_{t-i} X_{s-j}$$
+In particular, this implies that if $\{ X_t \}$ is covariance stationary, then so is $\{ Y_t \}$.
+\\*
+\\*
+{\bf Definition}: A covariance stationary process $\{ Y_t \}$ is $causal$ if there is a white noise process $\{ \epsilon_t \}$ and a sequence of constants $\{ \psi_i \}_{i \geq 0}$ such that $\sum_{i = 0}^{\infty} | \psi_i | < \infty$ and
+\begin{equation}
+Y_t = \sum_{i=0}^{\infty} \psi_i \epsilon_{t-i}
+\end{equation}
+\\*
+\\*
+{\bf Definition}: If $\{ Y_t \}$ is covariance stationary with autocovariance $\{ \gamma_k \}$, then its Autocovariance Generating Function is defined by
+\begin{equation}
+G \left( z \right) = \sum_{k=- \infty}^{k = \infty} \gamma_k z^k
+\end{equation}
+provided that the series converges for all z in some annulus $r^{-1} < |z| < r$ with $r > 1$.
+\\*
+If $\{ \epsilon_t \} \sim WN \left( 0, \sigma^2 \right)$ and $Y_t = \sum_{i = - \infty}^{\infty} \psi_i \epsilon_{t-i}$ and there exists $r > 1$ such that $\sum_{i= - \infty}^{\infty} | \psi_i | z^i < \infty$ for $r^{-1} < | z| <r$ then
+\begin{equation}
+\begin{split}
+G \left( z \right) & = \sigma^2 \sum_{k=-\infty}^{\infty} \sum_{j=-\infty}^{\infty} \psi_j \psi_{j + |k|} z^k \\
+& = \sigma^2 \left[ \sum_{j=-\infty}^{\infty} \psi_j^2 + \sum_{k=1}^{\infty} \sum_{j=-\infty}^{\infty} \psi_j \psi_{j+k} \left( z^k + z^{-k} \right) \right] \\
+& = \sigma^2 \left( \sum_{j=-\infty}^{\infty} \psi_j z^j \right)
+\left( \sum_{k=-\infty}^{\infty} \psi_k z^{-k} \right)
+\end{split}
+\end{equation}
+\\*
+{\bf Definition}: Let $\left( \Omega, \mathfrak{F}, \mathbb{P} \right)$ be a probability space. The measurable transformation $T: \Omega \rightarrow \Omega$ is $measure-preserving$ if $\mathbb{P}T^{-1}A = \mathbb{P}A \; \forall A \in \mathfrak{F}$. The measure-preserving transformation $T: \Omega \rightarrow \Omega$ is $ergodic$ if $\forall A \in \mathfrak{F}, T^{-1}A = A \Rightarrow \mathbb{P}A \in \{ 0, 1 \}$. A measurable function $f$ is $T-invariant$ if $f\left(\omega \right) = f \left( T \omega \right) \; \forall \omega \in \Omega$.
+\\*
+\\*
+{\bf The Ergodic Theorem}: Let $T: \Omega \rightarrow \Omega$ be a measure-preserving transformation on $\left( \Omega, \mathfrak{F}, \mathbb{P} \right)$ and $f$ a measurable and integrable function. Then
+\begin{equation}
+\widehat{f} \left( \omega \right) = \lim_{n \rightarrow \infty} \frac{1}{n} \sum_{i=1}^n f \left( T^i \omega \right)
+\end{equation}
+converges with probability 1 and $\widehat{f}$ is $T-invariant$, integrable and $\mathbb{E}\widehat{f} = \mathbb{E}f$. If $T$ is ergodic then $\widehat{f} = \mathbb{E}f$ with probability 1.
+\\*
+\\*
+{\bf Definition}: Given a covariance stationary time series $\{Y_t\}$, the partial autocorrelation function is:
+\begin{equation}
+\alpha \left( 1 \right) = Corr \left(Y_2 , Y_1 \right)
+\end{equation}
+and
+\begin{equation}
+\alpha \left(k\right) = Corr \left( Y_{k+1} - P_{\overline{sp} \{1,Y_2,...,Y_k\}} Y_{k+1} , Y_{1} - P_{\overline{sp} \{1,Y_2,...,Y_k\}} Y_1 \right)
+\end{equation}
+where $P_{\overline{sp} \{1,Y_2,...,Y_k\}}$ is the operator of $L^2$ projection onto the subspace spanned by $\{1,Y_2,...,Y_k\}$.
+\\*
+\\*
+It is not hard to show that $\alpha \left( k \right) = \phi_{kk}$ where
+\begin{equation}
+\left[
+\begin{matrix}
+\rho_0 & \rho_1 & \rho_2 & ... & \rho_{k-1} \\
+\rho_1 & \rho_0 & \rho_1 & ... & \rho_{k-2} \\
+\vdots & & \ddots & & \vdots \\
+\rho_{k-1} & \rho_{k-2} & \rho_{k-3} & ... & \rho_0 
+\end{matrix}
+\right]
+\left[
+\begin{matrix}
+\phi_{k1} \\
+\phi_{k2} \\
+\vdots \\
+\phi_{kk}
+\end{matrix}
+\right]
+=
+\left[
+\begin{matrix}
+\rho_1 \\
+\rho_2 \\
+\vdots \\
+\rho_k
+\end{matrix}
+\right]
+\end{equation}
+and $\rho_j = \gamma_j / \gamma_0$ is the correlation between $Y_{t+j}$ and $Y_t$.
+\section{Moving Average Processes and Invertibility}
+Suppose $\{ \epsilon_t \}_{t= - \infty}^{\infty}$ is $WN \left( 0 , \sigma^2 \right)$ and let
+\begin{equation} \label{MA(q)}
+Y_t = \mu + \epsilon_t + \sum_{i=1}^q \theta_i \epsilon_{t-i} =  \theta \left( L \right) \epsilon_t
+\end{equation}
+Taking expectations on both sides of \eqref{MA(q)} shows that $\mu$ is the mean of the process. 
+First note that
+\begin{equation}
+\gamma_k \coloneqq \mathbb{E} \left( Y_t -\mu \right) \left( Y_{t-k} - \mu \right) = \left\{\begin{matrix}
+\sigma^2 \sum_{i=0}^{q} \theta_i \theta_{i + |k|} & |k| \leq q \\ 
+0 & |k| > q
+\end{matrix}\right.
+\end{equation}
+where we set $\theta_i = 0 \; \forall i > q$. Suppose that the polynomial $\theta \left( L \right)$ factors as $\prod_{i=1}^q \left( 1 + \lambda_i L \right)$. If $|\lambda_i| < 1 \;\; \forall i$ then $\theta \left( L \right)$ is $invertible$ and we can recover $\epsilon_t$ as
+$$\epsilon_t = \left[ \prod_{i=1}^q \left(1 + \lambda_i L \right)^{-i} \right] \left( Y_t - \mu \right)$$
+However, even if $\theta \left( L \right)$ is not invertible, we can still find an invertible MA(q) representation for $Y_t$ as long as $|\lambda_i| \neq 1 \; \forall i$. Define
+\begin{equation}
+\widetilde{\lambda}_i = \left\{\begin{matrix}
+\lambda_i & | \lambda_i | < 1 \\ 
+\frac{1}{\lambda_i} & | \lambda_i | > 1
+\end{matrix}\right.
+\end{equation}
+Then define
+\begin{equation}
+\widetilde{\epsilon}_t = \prod_{i=1}^q \left( 1 + \widetilde{\lambda}_i L \right)^{-1} \left( Y_t - \mu \right)
+= \prod_{i=1}^q \left( 1 + \widetilde{\lambda}_i L \right)^{-1} \left( 1 + \lambda_i L \right) \epsilon_t
+\end{equation}
+which exists as an $L^2$ limit. Moreover, the Autocovariance Generating Function for $\widetilde{\epsilon}_t$ is:
+\begin{equation}
+\begin{split}
+G_{\widetilde{\epsilon}_t} \left( z \right) & = \sigma_2 \prod_{i=1}^q
+\left( 1 + \widetilde{\lambda}_i z \right)^{-1}
+\left( 1 + \widetilde{\lambda}_i z^{-1} \right)^{-1}
+\left( 1 + \lambda_i z \right)
+\left( 1 + \lambda_i z^{-1} \right) \\
+& = \sigma^2 \prod_{i: |\lambda_i| > 1} \frac{\left( 1 + \lambda_i z \right) \left( 1 + \lambda_i z^{-1} \right)}{
+\left( 1 + \frac{1}{\lambda_i} z \right) \left( 1 + \frac{1}{\lambda_i} z^{-1} \right)}\\
+& = \sigma^2 \prod_{i:|\lambda_i|>1}|\lambda_i|^2
+\end{split}
+\end{equation}
+It follows that $\{\widetilde{\epsilon}_t \} \sim WN \left( 0, \sigma^2 \prod_{i:|\lambda_i|>1}|\lambda_i|^2 \right)$ and $Y_t - \mu = \prod_{i=1}^q \left( 1 + \widetilde{\lambda}_i L \right) \widetilde{\epsilon}_t$. We call $\{ \widetilde{\epsilon}_t \}$ the $fundamental\;innovation$ for $\{Y_t\}$. What we have shown is that even if we are given an MA(q) representation that is NOT invertible (i.e. some roots of the MA polynomial lie within the unit circle), we can find an MA(q) representation of the process that is invertible.
+\\*
+\\*
+For an invertible MA(q) process,
+\begin{equation} \label{etFromLagY}
+\epsilon_t = \theta \left( L \right) ^ {-1} \left( Y_t - \mu \right)
+= \sum_{k=0}^{\infty} \sum_{\alpha \in \mathbb{N}_0^q : |\alpha| = k} \left[ \prod_{i=1}^q \left( - \lambda_i \right)^{\alpha_i} \right] \left( Y_{t - k} - \mu \right)
+\in \textup{span} \left( \{ Y_j : j \leq t \} \cup \{ 1 \} \right)
+\end{equation}
+Letting $P_t$ denote the $L^2$ projection operator onto $\textup{span} \left( \{ Y_j : j \leq t \} \cup \{ 1 \} \right)$, it follows that
+\begin{equation}
+P_t Y_{t+s} = \left\{\begin{matrix}
+\mu & s > q\\ 
+\mu + \sum_{i=s}^q \theta_i \epsilon_{t+s-i} & 1 \leq s \leq q  
+\end{matrix}\right.
+\end{equation}
+and therefore that
+\begin{equation}
+\mathbb{E} \left( Y_{t+s} - P_t Y_{t+s} \right)^2
+= \left\{\begin{matrix}
+\sigma^2 \left( 1 + \sum_{i=1}^q \theta_i^2 \right) & s > q\\ 
+\sigma^2 \left( 1 + \sum_{i=1}^{s-1} \theta_i^2 \right) & 1 \leq s \leq q  
+\end{matrix}\right.
+\end{equation}
+Of course, we generally do not have infinitely many lagged values of $Y_t$ to calculate $\epsilon_t$.
+\\*
+\\*
+Although the proof is long, it is possible to show using \eqref{etFromLagY} that the partial autocorrelations of $Y_t$ eventually decay asymptotically to zero as the sum of a geometric series.
+\section{Autoregressive Processes}
+\subsection{Properties of Autoregressive Processes}
+An AR(p) process is a time series $\{ Y_t \}$ satisfying:
+\begin{equation} \label{ARp}
+Y_t = c + \sum_{i=1}^p \phi_i Y_{t-i} + \epsilon_t
+\end{equation}
+If $\{ Y_t \}$ is stationary then $$\mu = c + \sum_{i=1}^p \phi_i \mu$$ so that $c = \mu \left( 1 - \sum_{i=1}^p \phi_i \right)$ and $\mu = c \left( 1 - \sum_{i=1}^p \phi_i \right)^{-1}$ and hence we can rewrite \eqref{ARp} as
+\begin{equation}
+\left( Y_t - \mu \right) = \sum_{i=1}^p \phi_i \left( Y_{t-i} - \mu \right) + \epsilon_t
+\end{equation}
+Therefore, the recentered process obeys the same law of motion as the original process.
+\\*
+It follows that
+\begin{equation}
+\gamma_k = \left\{\begin{matrix}
+\sum_{i=1}^p \phi_i \gamma_{i} + \sigma^2 & \textup{for}\;k = 0 \\ 
+\sum_{i=1}^p \phi_i \gamma_{k-i} & \textup{for}\;k \geq 1
+\end{matrix}\right.
+\end{equation}
+These are called the Yule-Walker equations and, if $\gamma_k$ is either known or can be estimated, can be used to construct estimators of $\phi_1,...,\phi_p$.
+We can write the process in matrix notation as:
+\begin{equation}
+\mathbf{Y}_t = \begin{bmatrix}
+Y_t \\
+Y_{t-1} \\
+\vdots \\
+Y_{t-p+1}
+\end{bmatrix}
+\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;
+\mathbf{\Xi}_t = \begin{bmatrix}
+\epsilon_t \\
+0 \\
+\vdots \\
+0
+\end{bmatrix}
+\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;
+\overrightarrow{\mu} = \begin{bmatrix}
+\mu \\
+\mu \\
+\vdots \\
+\mu
+\end{bmatrix}
+\end{equation}
+\begin{equation}
+\Phi = \begin{bmatrix}
+\phi_1 & \phi_2 & ... & \phi_p \\
+1 & 0 & ... & 0\\
+\vdots & \ddots & ... & 0 \\
+0 & ... & 1 & 0
+\end{bmatrix}
+\end{equation}
+so that
+\begin{equation} \label{ARpVec}
+\begin{split}
+\mathbf{Y}_t - \overrightarrow{\mu}
+& = \Phi \left( \mathbf{Y}_{t-1} - \overrightarrow{\mu} \right) + \mathbf{\Xi}_t \\
+& = \Phi^{(2)} \left( \mathbf{Y}_{t-2} - \overrightarrow{\mu} \right) + \Phi \mathbf{\Xi}_{t-1} + \mathbf{\Xi}_t \\
+& = \Phi^{(k+1)} \left( \mathbf{Y}_{t-k-1} - \overrightarrow{\mu} \right) + \sum_{i=0}^k \Phi^{(i)} \mathbf{\Xi}_{t-i}
+\end{split}
+\end{equation}
+Let $\Gamma$ be the $p \times p$ matrix where $\Gamma_{ij} = \gamma_{|i-j|}$ and let $\Upsilon$ be the $p \times p$ matrix where the only non-zero entry is $\Upsilon_{11} = \sigma^2$. Then
+\begin{equation}
+\Gamma = \mathbf{\Phi} \Gamma \mathbf{\Phi}^{-1} + \Upsilon
+\end{equation}
+so that
+\begin{equation}
+vec \left( \Gamma \right) = \left( \left( \Phi^{-1} \right)^{T} \bigotimes \Phi \right) vec \left( \Gamma \right) + vec \left( \Upsilon \right)
+\end{equation}
+from which it follows that
+\begin{equation}
+vec \left( \Gamma \right) = \left[ I_{p^2} - \left( \Phi^{-1} \right)^{T} \bigotimes \Phi \right]^{-1} vec \left( \Upsilon \right)
+\end{equation}
+Letting $P_t$ denote the $L^2$ projection operator onto $\textup{span} \left( \{ Y_j : j \leq t \} \cup \{ 1 \} \right)$, it follows that
+\begin{equation}
+P_t Y_{t+s} = \mu + \sum_{i=1}^p \Phi^{(s)}_{1i} \left( Y_{t+1-i} - \mu \right)
+\end{equation}
+so that
+\begin{equation}
+Y_{t+s} - P_t Y_{t+s} = \sum_{i=0}^{s-1} \Phi^{(i)}_{11} \epsilon_{t+s-i}
+\end{equation}
+and therefore
+\begin{equation}
+\mathbb{E} \left( Y_{t+s} - P_t Y_{t+s} \right) ^ 2
+= \sigma^2 \sum_{i=1}^{s-1} \left( \Phi_{11}^{(i)} \right)^2
+\end{equation}
+In particular, this implies that the partial autocorrelation of an AR(p) process satisfies $\alpha \left( k \right) = 0 \; \forall k > p$.
+\subsection{Estimating an Autoregressive Model with OLS}
+Assume we have data from an AR(p) process of the form \eqref{ARp}. If we have a total of $T+p$ observations indexed from $1-p$ to $T$ and define
+\begin{equation}
+X_t = \begin{bmatrix}
+1 \\
+Y_{t-1} \\
+Y_{t-2} \\
+\vdots \\
+Y_{t-p} \\
+\end{bmatrix}
+\end{equation}
+then the OLS estimator $\widehat{\beta}$ of $\beta = \left[ \begin{matrix}
+\mu & \phi_1 & ... & \phi_p
+\end{matrix}\right]'$  is
+\begin{equation}
+\widehat{\beta} = \left[ \sum_{t=1}^T X_t X_t' \right]^{-1} \sum_{t=1}^T X_t Y_t
+\end{equation}
+If we define the $(p+1) \times (p+1)$ matrix $\Psi$ by
+\begin{equation}
+\Psi_{ij} = \left\{\begin{matrix}
+1 & i = j = 1 \\ 
+\mu & i=1 , j \geq 2 \\
+\mu &  i \geq 2, j = 1 \\
+\gamma_{|i-j|} + \mu^2 & i \geq 2, j \geq 2
+\end{matrix}\right.
+\end{equation}
+then by the law of large numbers,
+\begin{equation}
+\left[ \frac{1}{T} \sum_{t=1}^T X_t X_t' \right]^{-1} \overset{P}{\rightarrow} \Psi^{-1}  
+\end{equation}
+Likewise, by the Central Limit Theorem for Martingale Difference Sequences
+\begin{equation}
+\frac{1}{\sqrt{T}} \sum_{t=1}^T X_t \epsilon_t \rightsquigarrow \mathbf{N} \left( 0 , \sigma^2 \Psi \right)
+\end{equation}
+It follows that
+\begin{equation}
+\sqrt{T} \left( \widehat{\beta} - \beta \right) \rightsquigarrow \mathbf{N} \left( 0 , \sigma^2 \Phi^{-1} \right)
+\end{equation}
+In particular, for an AR(1) process,
+\begin{equation}
+\Psi = \left[
+\begin{matrix}
+1 & \mu \\
+\mu & \frac{\sigma^2}{1 - \phi_1^2} + \mu^2
+\end{matrix}
+\right]
+\;\;\;\;\;\;\;\;\;
+\Psi^{-1} = \frac{1}{\sigma^2} \left[
+\begin{matrix}
+\sigma^2 + \mu^2 \left( 1 - \phi_1^2 \right) &
+- \mu \left( 1 - \phi_1^2 \right) \\
+- \mu \left( 1 - \phi_1^2 \right) &
+1 - \phi_1^2
+\end{matrix}
+\right]
+\end{equation}
+\section{Autoregressive Moving Average (ARMA)}
+An $ARMA \left( p,q \right)$ process $\{ Y_t \}$ is a stochastic process that follows the evolution:
+\begin{equation} \label{ARMApq}
+Y_t = c + \sum_{i=1}^p \phi_i Y_{t-i} + \epsilon_t + \sum_{i=1}^q \theta_i \epsilon_{t-i}
+\end{equation}
+Covariance stationarity of $\{ Y_t \}$ implies that $\mu = c + \mu \sum_{i=1}^p \phi_i$ so that
+\begin{equation} \label{ARMApqmu}
+Y_t - \mu = \sum_{i=1}^p \phi_i \left( Y_{t-i} -\mu \right) + \epsilon_t + \sum_{i=1}^q \theta_i \epsilon_{t-i}
+\end{equation}
+or, using lag polynomials,
+\begin{equation}
+\phi \left( L \right) \left( Y_t - \mu \right)
+= \theta \left( L \right) \epsilon_t
+\end{equation}
+A causal, stationary solution for \eqref{ARMApq} has the representation $Y_t - \mu = \sum_{i=0}^{\infty} \psi_i \epsilon_{t-i}$, from which we can recover $\{ \psi_i \}$ from matching coefficients in the relation $\phi \left( L \right) \psi \left( L \right) = \theta \left( L \right)$.
+It follows that
+\begin{equation}
+\gamma_k = \left\{ \begin{matrix}
+\sum_{i=1}^p \phi_i \gamma_{i} + \sigma^2 \left( 1 + \sum_{i=1}^q \theta_i \psi_{i} \right) & k = 0 \\
+\sum_{i=1}^p \phi_i \gamma_{|k-i|} + \sigma^2 \sum_{i=k}^q \theta_i \psi_{i-k} & 1 \leq k \leq q \\
+\sum_{i=1}^p \phi_i \gamma_{|k-i|} & k > q
+\end{matrix}
+\right.
+\end{equation}
+Notice that at sufficiently large lags, the autocovariance decays as the same sum of a geometric series that we saw for autoregressive models.
+\\*
+Without loss of generality, we may assume that $\theta \left( L \right)$ is invertible so that $\{ \epsilon_t \}$ are the fundamental innovations for the process. Then
+\begin{equation}
+\epsilon_t = \frac{\phi \left( L \right)}{\theta \left( L \right) } \left( Y_t - \mu \right) \in \textup{span} \left( \{ Y_j : j \leq t \} \cup \{ 1 \} \right)
+\end{equation}
+\\*
+It is also common to write this in matrix notation as:
+\begin{equation}
+\mathbf{Y}_t = \begin{bmatrix}
+Y_t \\
+Y_{t-1} \\
+\vdots \\
+Y_{t-p+1}
+\end{bmatrix}
+\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;
+\mathbf{\Xi}_t = \begin{bmatrix}
+\epsilon_t \\
+\epsilon_{t-1} \\
+\vdots \\
+\epsilon_{t-q}
+\end{bmatrix}
+\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;
+\overrightarrow{\mu} = \begin{bmatrix}
+\mu \\
+\mu \\
+\vdots \\
+\mu
+\end{bmatrix}
+\end{equation}
+\begin{equation}
+\Phi = \begin{bmatrix}
+\phi_1 & \phi_2 & ... & \phi_p \\
+1 & 0 & ... & 0\\
+\vdots & \ddots & ... & 0 \\
+0 & ... & 1 & 0
+\end{bmatrix}
+\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;
+\Theta = \begin{bmatrix}
+1 & \theta_1 & ... & \theta_q \\
+0 & 0 & ... & 0 \\
+\vdots & \ddots & ... & 0 \\
+0 & 0 & ... & 0
+\end{bmatrix}
+\end{equation}
+so that
+\begin{equation} \label{ARMApqVec}
+\mathbf{Y}_t - \overrightarrow{\mu} = \Phi \left( \mathbf{Y}_{t-1} - \overrightarrow{\mu} \right) + \Theta \mathbf{\Xi}_t
+\end{equation}
+Iterating on \eqref{ARMApqVec}, we have:
+\begin{equation}
+\begin{split}
+\mathbf{Y}_t - \overrightarrow{\mu} & = \Phi \left( \mathbf{Y}_{t-1} - \overrightarrow{\mu} \right) + \Theta \mathbf{\epsilon}_t \\
+& = \Phi \left( \Phi \left( \mathbf{Y}_{t-2} - \overrightarrow{\mu} \right) + \Theta \mathbf{\Xi}_{t-1} \right) + \mathbf{\Xi}_t \\
+& = \sum_{i=0}^k \Phi^{(i)} \mathbf{\Xi}_{t-i} + \Phi^{(k+1)} \left( \mathbf{Y}_{t-k-1} - \overrightarrow{\mu} \right)
+\end{split}
+\end{equation}
+It follows that covariance stationarity requires that the eigenvalues of $\Phi$ lie strictly inside the unit circle.
+\\*
+\\*
+Similar to the case of an MA(q) process, it is possible to show that the autocorrelation of an ARMA(p,q) eventually decays towards 0 as the sum of geometric series.
+\section{Durbin-Levinson and Innovations Algorithms}
+Suppose we have a zero mean process $\{ X_t \}_{t \geq 1 }$ in $L^2$ and we wish to calculate the $L^2$ projection of $X_{n+1}$ onto the linear span of $\{ X_t \}_{t = 1}^n$. The projection, $\widehat{X}_{n+1}$, can be written
+\begin{equation} \label{DLprojection}
+\widehat{X}_{n+1} = \sum_{i=1}^n \phi_{ni} X_{n+1 - i}
+\end{equation}
+Let
+\begin{equation} \label{DLMSE}
+\nu_n = \mathbb{E} \left( X_{n+1} - \widehat{X}_{n+1} \right)^2
+\end{equation}
+be the mean square error of the projection.
+\\*
+The Durbin-Levinson Algorithm is a recursive method for calculating the coefficients of \eqref{DLprojection} and the mean squared errors in \eqref{DLMSE} for covariance stationary $\{ X_t \}$.
+\\*
+\\*
+{\bf Durbin-Levinson Algorithm (Proposition 5.2.1 in Brockwell and Davis)}: Assume $\{ X_t \}$ is a mean-zero covariance stationary process with autocovariances $\{ \gamma_k \}$ where $\gamma_0 > 0$ and $\gamma_k \rightarrow 0$ as $k \rightarrow \infty$. Then the coefficients $\phi_{ni}$ and mean squared errors $\nu_n$ in \eqref{DLprojection} and \eqref{DLMSE} satisfy $\phi_{11} = \gamma_1 / \gamma_0$, $\nu_0 = \gamma_0$,
+\begin{equation}
+\phi_{nn} = \left[ \gamma_n - \sum_{i=1}^{n-1} \phi_{n-1,i} \gamma_{n-i} \right] \nu_{n-1}^{-1}
+\end{equation}
+\begin{equation}
+\begin{bmatrix}
+\phi_{n1} \\
+\vdots  \\
+\phi_{n,n-1}
+\end{bmatrix}
+=
+\begin{bmatrix}
+\phi_{n-1,1} \\
+\vdots  \\
+\phi_{n-1,n-1}
+\end{bmatrix}
+- \phi_{nn}
+\begin{bmatrix}
+\phi_{n-1,n-1} \\
+\vdots  \\
+\phi_{n-1,1}
+\end{bmatrix}
+\end{equation}
+and
+\begin{equation}
+\nu_n = \nu_{n-1} \left[ 1 - \phi_{nn}^2 \right]
+\end{equation}
+
+Another, more general recursive algorithm for calculating the projects in \eqref{DLprojection} is the Innovations Algorithm:
+\\*
+\\*
+{\bf The Innovations Algorithm (Proposition 5.2.2 in Brockwell and Davis)}: If $\{ X_t \}$ is a mean-zero process with $\mathbb{E}X_i X_j = \kappa_{ij}$ and the matrix $\left[ \kappa_{ij} \right]_{i,j=1}^n$ is non-singular for each $n \geq 1$ then the projections and mean squared errors in \eqref{DLprojection} and \eqref{DLMSE} can be calculated recursively as
+\begin{equation}
+\widehat{X}_{n+1} = 
+\left\{\begin{matrix}
+0 & \textup{if} \; n = 0\\ 
+\sum_{i=1}^n \theta_{ni} \left( X_{n+1-i} - \widehat{X}_{n+1-i} \right) & \textup{if} \; n \geq 1 
+\end{matrix}\right.
+\end{equation}
+\begin{equation}
+\nu_0 = \kappa_{11}
+\end{equation}
+\begin{equation}
+\theta_{n,n-k} = \nu_k^{-1} \left( \kappa_{n+1,k+1} - \sum_{i=0}^{k-1} \theta_{k,k-i} \theta_{n,n-i} \nu_i \right) \;\;\;\; k = 0,1,...,n-1
+\end{equation}
+\begin{equation}
+\nu_n = \kappa_{n+1,n+1} - \sum_{i=0}^{n-1} \theta_{n,n-i}^2 \nu_i
+\end{equation}
+\section{Random Walk}
+Suppose $\{ \epsilon_t \} \sim IID \left( 0 , \sigma^2 \right)$ and $Y_t = Y_{t-1} + \epsilon_t$. For $r \in \left[0,1\right]$, define
+\begin{equation}
+X_T \left( r \right) = \frac{1}{T}Y_{\floor{rT}}
+\end{equation}
+By the Functional Central Limit Theorem,
+\begin{equation}
+\sqrt{T} X_T \left( \cdot \right) \rightsquigarrow \sigma W \left( \cdot \right)
+\end{equation}
+where $W$ is a standard Brownian Motion. It follows from the Continuous Mapping Theorem that
+\begin{equation}
+T^{-3/2} \sum_{t=1}^T Y_{t-1} = \int_0^1 \sqrt{T} X_T \left( r \right) dr \rightsquigarrow \sigma \int_0^1 W \left( r \right) dr
+\end{equation}
+Note that
+\begin{equation}
+\begin{split}
+T^{-3/2} \sum_{t=1}^T Y_{t-1}
+& = T^{-3/2} \sum_{t=1}^T \left(T-t\right) \epsilon_t \\
+& = T^{-1/2} \sum_{t=1}^T \epsilon_t - T^{-3/2} \sum_{t=1}^T t \epsilon_t
+\end{split}
+\end{equation}
+Therefore
+\begin{equation}
+\begin{split}
+T^{-3/2} \sum_{t=1}^T t \epsilon_t
+& = T^{-1/2} \sum_{t=1}^T \epsilon_t - T^{-3/2} \sum_{t=1}^T Y_{t-1} \\
+& \rightsquigarrow \sigma W \left( 1 \right) - \sigma \int_0^1 W \left( r \right) dr
+\end{split}
+\end{equation}
+By the Continuous Mapping Theorem we also have
+\begin{equation}
+T^{-2} \sum_{t=1}^T Y_{t-1}^2 = \int_0^1 \left[ \sqrt{T} X_T \left( r \right) \right]^2 dr \rightsquigarrow \sigma^2 \int_0^1 \left[ W \left( r \right) \right]^2 dr
+\end{equation}
+\begin{equation}
+T^{-5/2} \sum_{t=1}^T t Y_{t-1} = T^{-3/2} \sum_{t=1}^T \left( t/T \right) Y_{t-1} \rightsquigarrow \sigma \int_0^1 r W \left( r \right) dr
+\end{equation}
+and
+\begin{equation}
+T^{-3} \sum_{t=1}^T t Y_{t-1}^2 = T^{-2} \sum_{t=1}^T \left( t/T \right) Y_{t-1}^2 \rightsquigarrow \sigma^2 \int_0^1 r \left[ W \left(r \right) \right]^2 dr
+\end{equation}
+Since
+\begin{equation}
+Y_T^2 = \sum_{t=1}^T \sum_{j=1}^T \epsilon_t \epsilon_j
+= 2 \sum_{t=1}^T Y_{t-1} \epsilon_t + \sum_{t=1}^T \epsilon_t^2
+\end{equation}
+it follows that
+\begin{equation}
+\frac{1}{T} \sum_{t=1}^T Y_{t-1} \epsilon_t = \frac{1}{2T} Y_T^2 - \frac{1}{2T} \sum_{t=1}^T \epsilon_t^2
+\rightsquigarrow \frac{1}{2} \sigma^2 \left[ W \left( 1 \right) \right]^2 - \frac{1}{2} \sigma^2
+\end{equation}
+Then the OLS estimator of $\beta$ in the regression $Y_t = \beta Y_{t-1} + \epsilon_t$ is
+\begin{equation}
+\widehat{\beta} = \left[ \sum_{t=1}^T Y_{t-1}^2 \right]^{-1} \sum_{t=1}^T Y_{t-1} Y_t = 1 + \left[ \sum_{t=1}^T Y_{t-1}^2 \right]^{-1} \sum_{t=1}^T Y_{t-1} \epsilon_t
+\end{equation}
+Hence
+\begin{equation}
+\begin{split}
+T \left( \widehat{\beta} - 1 \right) 
+& = \left[ T^{-2} \sum_{t=1}^T Y_{t-1}^2 \right]^{-1} \frac{1}{T} \sum_{t=1}^T Y_{t-1} \epsilon_t \\
+& \rightsquigarrow \frac{\frac{1}{2} \sigma^2 \left[ W \left( 1 \right) \right]^2 - \frac{1}{2} \sigma^2}{\sigma^2 \int_0^1 \left[ W \left( r \right) \right]^2 dr} \\
+& \overset{L}{=} \frac{\frac{1}{2} \{ \left[ W \left( 1 \right) \right]^2  - 1\}}{\int_0^1 \left[ W \left( r \right) \right]^2 dr}
+\end{split}
+\end{equation}
+\section{Deterministic Time Trends}
+Suppose that
+\begin{equation}
+Y_t = \beta_1 + \beta_2 t + \epsilon_t
+\end{equation}
+where $\{ \epsilon_t \} \sim WN \left( 0 , \sigma^2 \right)$.
+The OLS estimator for $\beta$ is
+\begin{equation}
+\widehat{\beta} = \beta +
+\left[
+\begin{matrix}
+T & \sum_{t=1}^T t \\
+\sum_{t=1}^T t & \sum_{t=1}^T t^2
+\end{matrix}
+\right]^{-1}
+\left[
+\begin{matrix}
+\sum_{t=1}^T \epsilon_t \\
+\sum_{t=1}^T t \epsilon_t
+\end{matrix}
+\right]
+\end{equation}
+It is simple to prove by induction that
+\begin{equation}
+\sum_{t=1}^T t = T \left( T+1 \right) / 2
+\;\;\;\;\;\;\;
+\sum_{t=1}^T t^2 = T \left( T+1 \right) \left( 2T + 1 \right)/6
+\end{equation}
+Hence
+\begin{equation}
+\left[
+\begin{matrix}
+T & \sum_{t=1}^T t \\
+\sum_{t=1}^T t & \sum_{t=1}^T t^2
+\end{matrix}
+\right]^{-1}
+= \frac{1}{T^2 \left( T+1 \right)\left(2T+1 \right)/6 - T^2 \left(T+1\right)^2/4}
+\end{equation}
+\begin{equation}
+\begin{split}
+Var \left( \frac{1}{\sqrt{T}} \sum_{t=1}^T \left[ \lambda_1 + \lambda_2 \left( t / T \right) \right] \epsilon_t \right)
+& = \frac{1}{T} \sum_{t=1}^T \sigma^2 \left[ \lambda_1^2 + 2 \lambda_1 \lambda_2 \left( t/T \right) + \lambda_2^2 \left( t/T \right)^2 \right] \\
+& \rightarrow \sigma^2 \left[ \lambda_1^2 + \lambda_1 \lambda_2 + \frac{1}{3} \lambda_2^2 \right] \\
+& = \sigma^2 \mathbf{\lambda}' \mathbf{Q \lambda}
+\end{split}
+\end{equation}
+where 
+\begin{equation}
+\lambda = \left[ \begin{matrix}
+\lambda_1 \\ \lambda_2
+\end{matrix} \right]
+\;\;\;\;\;\;\;
+\mathbf{Q} = \left[ \begin{matrix}
+1 & \frac{1}{2} \\
+\frac{1}{2} & \frac{1}{3}
+\end{matrix} \right]
+\end{equation}
+It follows from the Central Limit Theorem for Martingale Difference Sequences and the Cramer Wold device that
+\begin{equation}
+\left[ \begin{matrix}
+\frac{1}{\sqrt{T}} \sum_{t=1}^T \epsilon_t \\
+\frac{1}{\sqrt{T}} \sum_{t=1}^T \frac{t}{T} \epsilon_t
+\end{matrix} \right] \rightsquigarrow N \left( 0, \sigma^2 \mathbf{Q} \right)
+\end{equation}
+Then letting
+\begin{equation}
+R = \left[
+\begin{matrix}
+\sqrt{T} & 0 \\
+0 & \sqrt{T}^3
+\end{matrix}
+\right]
+\end{equation}
+we have
+\begin{equation}
+\begin{split}
+\left[
+\begin{matrix}
+\sqrt{T} \left( \widehat{\beta_1} - \beta_1 \right) \\
+T^{3/2} \left( \widehat{\beta_2} - \beta_2 \right)
+\end{matrix}
+\right]
+& = R \left( \widehat{\beta} - \beta \right)
+= R \left[
+\begin{matrix}
+T & \sum_{t=1}^T t \\
+\sum_{t=1}^T t & \sum_{t=1}^T t^2
+\end{matrix}
+\right]^{-1} R R^{-1}
+\left[
+\begin{matrix}
+\sum_{t=1}^T \epsilon_t \\
+\sum_{t=1}^T t \epsilon_t
+\end{matrix}
+\right] \\
+& = \left[
+\begin{matrix}
+\frac{1}{T} T & \frac{1}{T^2} \sum_{t=1}^T t \\
+\frac{1}{T^2} \sum_{t=1}^T t & \frac{1}{T^3} \sum_{t=1}^T t^2
+\end{matrix}
+\right]^{-1}
+R^{-1}
+\left[
+\begin{matrix}
+\sum_{t=1}^T \epsilon_t \\
+\sum_{t=1}^T t \epsilon_t
+\end{matrix}
+\right]
+\end{split}
+\end{equation}
+Since
+\begin{equation}
+\left[
+\begin{matrix}
+\frac{1}{T} T & \frac{1}{T^2} \sum_{t=1}^T t \\
+\frac{1}{T^2} \sum_{t=1}^T t & \frac{1}{T^3} \sum_{t=1}^T t^2
+\end{matrix}
+\right]^{-1} \overset{P}{\rightarrow} \mathbf{Q}^{-1}
+\end{equation}
+it follows that
+\begin{equation}
+\left[
+\begin{matrix}
+\sqrt{T} \left( \widehat{\beta_1} - \beta_1 \right) \\
+T^{3/2} \left( \widehat{\beta_2} - \beta_2 \right)
+\end{matrix}
+\right] \rightsquigarrow N \left( 0 , \sigma^2 \mathbf{Q}^{-1} \right)
+\end{equation}
+\section{Classical Time Series Decomposition}
+It is often the case that a time series will exhibit both a trend and cyclical component, typically called seasonality. The "classical decomposition" is the representation of a time series $\{ Y_t \}$ as
+\begin{equation} \label{classDecomp}
+Y_t = m_t + s_t + X_t
+\end{equation}
+where $m_t$ is a trend component, $s_t$ is a seasonal or cyclical component with cycle $d$ and $X_t$ is covariance stationary. We review a few standard approaches to modeling \eqref{classDecomp}.
+\subsection{Method 1}
+For the first method, we apply a low pass filter to the series to approximate the time trend while leaving the cyclical component intact. If $d$ is odd, let $q = \frac{1}{2} \left( d -1 \right)$, otherwise let $q = \frac{1}{2}d$. Then let
+\begin{equation}
+\widehat{m_t} = \left\{
+\begin{matrix}
+\frac{1}{d} \left( \frac{1}{2} Y_{t-q} + \sum_{i=t-q+1}^{t+q-1} Y_i + \frac{1}{2} Y_{t + q} \right) & d \; \textup{even}, \; q < t \leq T - q \\
+\frac{1}{d} \sum_{i= t - q}^{t + q} Y_i & d \; \textup{odd}, \; q < t \leq T - q
+\end{matrix}
+\right.
+\end{equation}
+Setting $l_k = \floor{\frac{1}{d} \left(q - k \right)} +1$ and $u_k = \floor{\frac{1}{d} \left( T - q -k \right)}$ for each $k \in \{1,...,d \}$, define
+\begin{equation}
+w_k = \frac{1}{u_k - l_k +1}\sum_{i = l_k}^{u_k} \left( Y_{k+id} - \widehat{m}_{k+id} \right)
+\end{equation}
+We then estimate the seasonal component as
+\begin{equation}
+\widehat{s}_k = w_k - \frac{1}{d} \sum_{i=1}^d w_i \;\;\;\;\;\;\;\;\;\; k \in \{1,...,d\}
+\end{equation}
+and recursively as $\widehat{s}_k = \widehat{s}_{k-d}$ for $k>d$.
+The deseasonalized data is then defined as
+\begin{equation}
+d_t = Y_t - \widehat{s}_{t - d \floor{t/d}}
+\end{equation}
+We then re-estimate the trend component using this deseasonalized data using either a low pass filter as before or fitting a low order polynomial to produce the final estimate $\{ \widehat{m}_t \}$. Finally, we produce an estimate of $\{ X_t \}$ as
+\begin{equation}
+\widehat{X}_t = Y_t - \widehat{s}_t - \widehat{m}_t
+\end{equation}
+\subsection{Method 2}
+The second method is to apply a lag polynomial that effectively eliminates the seasonal and trend components. In particular, we look for a lag polynomial of the form $\left( 1 - L \right)^k \left( 1 - L^d \right)$ that results in a covariance stationary series when applied to $\{ Y_t \}$. The term $\left( 1 - L^d \right)$ removes the seasonal component. Ideally we find the smallest value of $k \in \mathbb{N}$ that results in a covariance stationary remainder.
+\section{Autoregressive Integrated Moving Averages ARIMA(p,d,q)}
+Given $\{ \epsilon_t \} \sim WN \left( 0 , \sigma^2 \right)$, an $ARIMA \left( p , d, q \right)$ is a time series satisfying
+\begin{equation}
+\phi \left( L \right) \left( 1 - L \right)^d Y_t = \theta \left( L \right) \epsilon_t
+\end{equation}
+where $\phi \left( L \right)$ and $\theta \left( L \right)$ are polynomials of degrees $p$ and $q$, respectively, and all roots of these polynomials lie outside of the unit circle.
+\end{document}

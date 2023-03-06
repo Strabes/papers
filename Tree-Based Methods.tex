@@ -1,0 +1,228 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\argmin}{argmin} 
+\usepackage{amsfonts}
+\usepackage{geometry}
+\usepackage{mathtools}
+\usepackage{listings}
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\DontPrintSemicolon
+\usepackage{varioref}
+\usepackage{hyperref}
+\labelformat{algocf}{\textit{Algorithm}\,(#1)}
+\author{Greg Strabel}
+\title{Tree Based Methods}
+\begin{document}
+\maketitle
+\section{Preliminaries}
+$\mathbf{Definition}$: A $directed\ graph$, $G$, is a tuple $\left( V,A \right)$, consisting of a set $V$, called vertices, and a set $A \subseteq \{ \left( v, w  \right) | v,w \in V, v \neq w \}$, called arrows, consisting of order pairs of distinct elements of $V$.
+\\*
+\\*
+$\mathbf{Definition}$: Given a directed graph $G = \left( V,A \right)$, a $directed\ path$ from $v$ to $w$ is a tuple of distinct arrows $\{ \left(v_i, w_i \right) \}_{i=1}^P \in A$ such that $v_1 = v$, $w_P = w$ and $\forall i < P, \ w_i = v_{i+1}$
+\\*
+\\*
+$\mathbf{Definition}$: A $binary\ tree$ is a directed graph $G = \left( V,A \right)$ such that:
+\begin{enumerate}
+\item There is a unique $r \in V$, called $root$, such that $\forall v \in V : \left( v,r \right) \notin A$.
+\item For each vertex $v \in V$, there is a unique directed path from root to $v$.
+\item For each vertex $v \in V, \ \left| \{ w \in V : \left( v,w \right) \in A \} \right| \in \{ 0,2 \}$.
+\end{enumerate}
+If $\left(v,w\right) \in A$, then we say that $v$ is a $parent$ of $w$ and $w$ is a $child$ of $v$. If $v \in V$ has children, we call it an $internal\ vertex$ or $internal\ node$.
+If $v \in V$ does not have any children, we call it a $leaf$.
+\\*
+\\*
+Given a binary tree $G_0 = \left( V_0, A_0 \right)$ and a leaf $l \in V$, we can construct another binary tree that is an extension of $G_0$, by adding two new vertices $v$ and $w$ as children of $l$:
+\begin{equation} \label{treeExt}
+G_1 \coloneqq \left( V_1,A_1 \right) \coloneqq
+\left(
+V_0 \cup \{ v, w \} ,\ 
+A \cup \{ \left( l, v \right) , \left( l,w \right) \}
+\right)
+\end{equation}
+Starting with a tree consisting of just a root, $G_0 = \left( \{ r \} , \o \right)$, we can apply the extension procedure above recursively to build arbitrarily large binary trees.
+\section{Basics of Recursive Binary Partitions}
+Assume that we have a dataset $\mathbb{D} \coloneqq \{ \mathbf{x}_i, \mathbf{y}_i \}_{i=1}^N$ where $\mathbf{x}_i$ is a $n$-tuple, $\mathbf{x}_i = \left( x_{i1},...,x_{in} \right) \in \mathbf{X} = X_1 \times ... \times X_n$, and $\mathbf{y}_i \in \mathbf{Y}$. Given a loss function $L$, we desire to find a function $f: \mathbf{X} \rightarrow \mathbf{Y}$ of the form
+\begin{equation}
+f \left( \mathbf{x} \right) \coloneqq \sum_{j \in J} c_j \mathbf{1} \{ \mathbf{x} \in R_j \}
+\end{equation}
+where $\{R_j\}_{j=1}^J$ is a partition of $\mathbf{X}$ that approximately minimizes $\sum_{i=1}^N L \left( \mathbf{y}_i , f \left( \mathbf{x}_i \right) \right)$
+This approach is generally computationally infeasible. Instead, we search for a partition of $\mathbf{X}$ in a recursive, greedy manner.
+\\*
+Let
+\begin{equation}
+\mathbb{D}_R \coloneqq \{ \left( \mathbf{x}_i, \mathbf{y}_i \right) \in \mathbb{D} : \mathbf{x}_i \in R \} ,
+\end{equation}
+\begin{equation}
+\mathfrak{D} \coloneqq
+\{ \left( R, \mathbb{D}_R \right) : R \subseteq \mathbf{X} \}
+\end{equation}
+and, for $\mathbf{D} = \left( R, \mathbb{D}_R \right) \in \mathfrak{D}$,
+\begin{equation}
+2^{\mathbf{D}} \coloneqq \{ \left( \left( R_l, \mathbb{D}_{R_l} \right) , \left( R_r, \mathbb{D}_{R_r} \right) \right) \in \mathfrak{D}^2 : R_r \subseteq R, \; R_l = R \setminus R_r \}
+\end{equation}
+For $\mathbf{D} = \left( R , \mathbb{D} _R \right) \in \mathfrak{D}$ the loss improvement from the refined binary partition $\left( \mathbf{D}_l , \mathbf{D}_r \right) = \left( \left( R_l, \mathbb{D}_{R_l} \right) , \left( R_r, \mathbb{D}_{R_r} \right) \right) \in 2^{\mathbf{D}}$ is
+\begin{equation}
+\textup{lossImp} \left( \mathbf{D} , \mathbf{D}_l , \mathbf{D}_r \right) = \min_{c} \sum_{\left( \mathbf{x}_i, \mathbf{y}_i \right) \in \mathbb{D}_R} L \left( \mathbf{y}_i ,c \right)			
+- \min_{c_l , c_r} \left[ \sum_{ \mathbb{D}_{R_l} } L \left( \mathbf{y}_i , c_l \right) + 
+\sum_{ \mathbb{D}_{R_r} } L \left( \mathbf{y}_i , c_r \right) \right]
+\end{equation}
+\\*
+We require an algorithm which, for each $\mathbf{D} \in \mathfrak{D}$, searches over a representative subset of $2^{\mathbf{D}}$ for a binary partition of $\mathbf{D}$ that approximately maximizes $\textup{lossImp}$. One such algorithm is the Basic Binary Split of \vref{BasicBinarySplit}. Starting with $\mathbf{D} = \left( \mathbf{X} , \mathbb{D} \right)$, we apply the Basic Binary Split recursively to each leaf until some stopping criteria is reached. Common stopping criteria include a minimum number of observations in a leaf or a minimum loss improvement from splitting.
+\\*
+
+\begin{algorithm}
+\SetNoFillComment
+\KwIn{Subset $\mathbf{D} = \left( R, \mathbb{D}_R \right) \in \mathfrak{D}$, loss function $L$}
+\KwOut{Partition $\left( \mathbf{D}_l , \mathbf{D}_r \right) \in 2^{\mathbf{D}}$}
+\For{$j \in \{1,...,n \}$}{
+\uIf{$X_j$ is categorical}{
+$S = \textbf{enum} \left(  \{ \left( \mathbf{D}_l, \mathbf{D}_r \right) \in 2^{\mathbf{D}} : \left( \exists A \subset X_j : R_l = A \cap R \right) \} \right) $
+}		
+\uElseIf{$X_j$ is ordinal}{
+$\textup{V} \leftarrow \mathbf{cutpoints} \left( \{ \mathbf{x}_{ij} \} \right) $\tcp*{\parbox[t]{3in}{\raggedright e.g. midpoints of adjacent order statistics}}
+$S = \textbf{enum} \left( \{ \left( \mathbf{D}_l, \mathbf{D}_r \right) \in 2^{\mathbf{D}} : R_l = R \cap \{ x \leq d : d \in V \} \} \right)$
+}
+$v = \overrightarrow{0} \in \mathbb{R}^{|S|}$
+\;
+\For{$t \in \{1,...,|S|\} $}{
+$\left( \mathbf{D}_r , \mathbf{D}_l \right) = S \left( t \right)$
+\;
+$v_t = \textup{lossImp} \left( \mathbf{D} , \mathbf{D}_l , \mathbf{D}_r \right)$
+}
+$b_j = \argmax_{t \in \{ 1,...,|S| \}} v_t$
+\;
+$\mathbf{D}^{\left( j \right)} =  S \left( b_j \right) $
+}
+$j^* = \argmax_{j \in \{ 1,...,n \} } \{ b_j \}$
+\;
+\Return{$\mathbf{D}^{\left( j^* \right)}$}\;
+\caption{Basic Binary Split}\label{BasicBinarySplit}
+\end{algorithm}
+
+Unfortunately, the Basic Binary Split quickly becomes computationally infeasible when datasets contain categorical variables with even a small number of distinct values. For a categorical variable with $K$ levels, there are $2^{K-1} - 1$ distinct partitions to consider when splitting. For instance, if $K = 30$, there are over 500 million possible partitions. We explore several alternative methods for splitting on categorical variables in the next section.
+
+\section{Splitting on a Categorical Variable}
+\subsection{All possible partitions}
+\subsection{Binary Target Variable}
+When $\mathbf{Y}$ is binary, there is a shortcut for finding the best partition of a leaf $\left( R , \mathbb{D}_R \right) \in \mathfrak{D}$ on a categorical variable $X_j$. Without loss of generality, assume $\mathbf{Y} = \{ 0 , 1 \}$ and for each $A \subseteq X_j$ define
+\begin{equation}
+N_A = \sum_{\left( \mathbf{x}_i, y_i \right) \in \mathbb{D}_R} \mathbf{1} \{ \mathbf{x}_{ij} \in A \}
+\end{equation}
+and
+\begin{equation}
+\overline{y}_A = \frac{1}{N_A} \sum_{\left( \mathbf{x}_i, y_i \right) \in \mathbb{D}_R} y_i \mathbf{1} \{ \mathbf{x}_{ij} \in A \}
+\end{equation}
+Then the optimal partition $\left( R_l , R_r \right)$ of R is of the form $R_l = R \cap A$ and $R_r = R \cap B$ where $A = \{ z \in X_j : \overline{y}_{\{z\}} < p \}$ for some $p \in \left( 0 , 1 \right)$, $B = X_j \setminus A$ and the corresponding predictions for $R_l$ and $R_r$ are $p_A$ and $p_B$ where $p_A < p_B$. To see why this is the case, suppose the optimal partition of $R$ on $X_j$ is $\left( R_l , R_r \right)$ where $R_l = R \cap A$ for some $A \subset X_j$, $B = X_j \setminus A$ and $p_A < p_B$. Suppose that $\alpha \in A$ and $\beta \in B$. Since the partition is optimal
+\begin{equation}
+\overline{y}_{\{\alpha\}} L \left( 1 , p_A \right) + \left( 1 - \overline{y}_{\{\alpha\}} \right) L \left( 0 , p_A \right) <
+\overline{y}_{\{\alpha\}} L \left( 1 , p_B \right) + \left( 1 - \overline{y}_{\{\alpha\}} \right) L \left( 0 , p_B \right)
+\end{equation}
+and
+\begin{equation}
+\overline{y}_{\{\beta\}} L \left( 1 , p_B \right) + \left( 1 - \overline{y}_{\{\beta\}} \right) L \left( 0 , p_B \right) <
+\overline{y}_{\{\beta\}} L \left( 1 , p_A \right) + \left( 1 - \overline{y}_{\{\beta\}} \right) L \left( 0 , p_A \right)
+\end{equation}
+Rearranging and combining these equations and using the assumptions that $L \left( 1 , p \right)$ is decreasing in $p$ and $L \left( 0 , p \right)$ is increasing in $p$, we have
+\begin{equation}
+\begin{split}
+\overline{y}_{\{\alpha\}} \left[ L \left( 1, p_A \right) - L \left( 1, p_B \right) \right] & < \left( 1 - \overline{y}_{\{\alpha\}} \right) \left[ L \left( 0, p_B \right) - L \left( 0, p_A \right) \right] \\
+& < \left( 1 - \overline{y}_{\{\beta\}} \right) \left[ L \left( 0, p_B \right) - L \left( 0, p_A \right) \right] \\
+& < \overline{y}_{\{\beta\}} \left[ L \left( 1, p_A \right) - L \left( 1, p_B \right) \right]
+\end{split}
+\end{equation}
+which implies that $\overline{y}_{\{\alpha\}} < \overline{y}_{\{\beta\}}$. The result follows immediately from the fact that $\alpha$ and $\beta$ were arbitrary elements of $A$ and $B$, respectively.
+\\*
+Therefore, finding the optimal split of a categorical variable $X_j$ in a binary classification problem reduces to a problem of order $O \left( |X_j| \right)$.
+\subsection{Numeric Target Variable and Squared Loss}
+When $\mathbf{Y}$ is numeric and $L \left( y , f \right) = \left( f - y \right)^2$, there is a shortcut for finding the best partition of a leaf $\left( R , \mathbb{D}_R \right) \in \mathfrak{D}$ on a categorical variable $X_j$ analogous to that for a binary response. For each $A \subseteq X_j$ define
+\begin{equation}
+N_A = \sum_{\left( \mathbf{x}_i, y_i \right) \in \mathbb{D}_R} \mathbf{1} \{ \mathbf{x}_{ij} \in A \}
+\end{equation}
+and
+\begin{equation}
+\overline{y}_A = \frac{1}{N_A} \sum_{\left( \mathbf{x}_i, y_i \right) \in \mathbb{D}_R} y_i \mathbf{1} \{ \mathbf{x}_{ij} \in A \}
+\end{equation}
+Then the optimal partition $\left( R_l , R_r \right)$ of R is of the form $R_l = R \cap A$ and $R_r = R \setminus A$ where $A = \{ z \in X_j : \overline{y}_{\{z\}} < p \}$ for some $p \in \mathbb{R}$ and the corresponding predictions for $R_l$ and $R_r$ are $\overline{y}_A$ and $\overline{y}_{X_j \setminus A}$. To see why this is the case, suppose the optimal partition of $R$ on $X_j$ is $\left( R_l , R_r \right)$ where $R_l = R \cap A$ for some $A \subset X_j$, $B = X_j \setminus A$ and $\overline{y}_A < \overline{y}_B$. Since the slit is optimal and we are using squared error loss, the predictions on $R_l$ and $R_r$ are $\overline{y}_A$ and $\overline{y}_B$, respectively. Suppose that $\alpha \in A$ and $\beta \in B$. Optimality implies that
+\begin{equation}
+\begin{split}
+\sum_{\left( \mathbf{x}_i, y_i \right) \in \mathbb{D}_{R}: \mathbf{x}_{ij} = \alpha} \left[ \left( y_i - \overline{y}_{ \{ \alpha \} } \right)^2 + \left( \overline{y}_{ \{ \alpha \} } - \overline{y}_A \right)^2 \right]
+& = \sum_{\left( \mathbf{x}_i, y_i \right) \in \mathbb{D}_{R}: \mathbf{x}_{ij} = \alpha} \left( y_i - \overline{y}_A \right)^2 \\
+& < \sum_{\left( \mathbf{x}_i, y_i \right) \in \mathbb{D}_{R}: \mathbf{x}_{ij} = \alpha} \left( y_i - \overline{y}_B \right) \\
+& = \sum_{\left( \mathbf{x}_i, y_i \right) \in \mathbb{D}_{R}: \mathbf{x}_{ij} = \alpha} \left[ \left( y_i - \overline{y}_{ \{ \alpha \} } \right)^2 + \left( \overline{y}_{ \{ \alpha \} } - \overline{y}_B \right)^2 \right]
+\end{split}
+\end{equation}
+It follows that
+\begin{equation}
+\left( \overline{y}_{ \{ \alpha \} } - \overline{y}_A \right)^2 < \left( \overline{y}_{ \{ \alpha \} } - \overline{y}_B \right)^2
+\end{equation}
+A similar argument shows that
+\begin{equation}
+\left( \overline{y}_{ \{ \beta \} } - \overline{y}_B \right)^2 < \left( \overline{y}_{ \{ \beta \} } - \overline{y}_A \right)^2
+\end{equation}
+It follows that
+\begin{equation}
+\overline{y}_{ \{ \alpha \} } < \frac{1}{2} \left( \overline{y}_A + \overline{y}_B \right) < \overline{y}_{ \{ \beta \} }
+\end{equation}
+establishing the desired results.
+Hence, finding the optimal split of a categorical variable $X$ in a regression problem with squared error loss reduces to a problem of order $O \left( |X| \right)$.
+\subsection{Numeric Response and Quadratic Taylor Approximation to the Loss Function}
+\subsection{Start Right, Pull Left}
+Versions of this algorithm appeared in Buntine and Caruana (1991) and Mehta et al. (1996)
+\begin{algorithm}
+\DontPrintSemicolon
+\KwIn{Subset $\mathbf{D} = \left( R, \mathbb{D}_R \right) \in \mathfrak{D}$, loss function $L$, categorical feature $X_j$}
+\KwOut{Partition $\left( \mathbf{D}_l , \mathbf{D}_r \right) \in 2^{\mathbf{D}}$}
+$A = \emptyset, \; B = X_j$
+\;
+\For{$j \in \{1,...,|X_j| - 1 \}$}{
+\For{$\alpha \in B$}{		
+$W = A \cup \{ \alpha \} , \; U = B \setminus \{ \alpha \}$
+\;
+$R_W = R \cap \{ x \in \mathbf{X} : x_j \in W \}, \; R_U = R \setminus R_W$
+\;
+$\left( \mathbf{D}_W , \mathbf{D}_U \right) = \left( \left( R_W , \mathbb{D}_{R_W} \right) ,\left( R_U , \mathbb{D}_{R_U} \right) \right)$
+\;
+$b_j \left( \alpha \right) = \textup{lossImp} \left( \mathbf{D} , \mathbf{D}_{R_W} , \mathbf{D}_{R_U} \right)$
+}
+$\alpha^*_j = \argmax_{\alpha \in B} b_j \left( \alpha \right)$
+\;
+$b^*_j = b_j \left( \alpha^*_j \right)$
+\;
+$A^*_j = A \cup \{ \alpha^*_j \} , \; B^*_j = B \setminus \{ \alpha^*_j \}$
+\;
+$A = A^*_j , \; B = B^*_j$
+}
+$j^* = \argmax_{j} \{ b^*_j \}$
+\;
+$R_l = R \cap \{ x \in \mathbf{X} : x_j \in A^*_{j^*} \} , \; R_r = R \setminus R_r$ 
+\;
+\Return{$\left( \mathbf{D}_l , \mathbf{D}_r \right)$}\;
+\caption{Start Right, Pull Left}\label{StartRightPullLeft}
+\end{algorithm}
+\subsection{Principal Component Scoring}
+Principal Component Scoring is a heuristic method for splitting categorical variables when the target is a $C$-class categorical variable. The method was developed by Coppersmith, Hong and Hosking (Partitioning Nominal Attributes in Decision Trees). Suppose $|X| = K$. For ease of notation, enumerate both the $K$ levels of $X$ and the $C$ levels of $Y$. Define the $K \times C$ matrix $\mathbf{N}$ by $\mathbf{N}_{k,c} = \sum_i \mathbf{1} \{ x_i = k, y_i = c \}$. For $k \in \{ 1,...,K \}$, let $N_k = \sum_{c} \mathbf{N}_{k,c}$. Define the $K \times C$ matrix $\mathbf{P}$ by $\mathbf{P}_{k,c} = \mathbf{N}_{k,c} / N_k$.
+Let the vector of mean class probabilities be
+$$\overline{\mathbf{p}} = \frac{1}{N} \sum_k \mathbf{N}_{k \cdot}$$
+Let
+$$\Sigma = \frac{1}{N-1} \sum_k \mathbf{N}_{k \cdot} \left( \mathbf{P}_{k \cdot} - \overline{\mathbf{p}} \right)
+\left( \mathbf{P}_{k \cdot} - \overline{\mathbf{p}} \right)^T$$
+Let $\mathbf{v}$ be the first principal component of $\Sigma$. The principal component score of $\mathbf{P}_{k \cdot}$ is $$S_k = \mathbf{v} \cdot \mathbf{P}_{k \cdot}$$
+If $\{ S_{\left( k \right)} \}$ are the order statistics for $\{ S_k \}$ then we consider all partitions of the form
+\begin{equation}
+A_j = \{ k : S_k < S_{\left( j \right)} \}, \;\;\;\;\;
+B_j = X \setminus A_j
+\end{equation}
+Coppersmith et al. recommend also considering partitions of the form
+\begin{equation}
+A_j = \{ k : S_k < S_{\left( j \right)} \textup{or} S_k = S_{\left( j + 1 \right)} \}, \;\;\;\;\; B_j = X \setminus A_j
+\end{equation}
+Experiments in Coppersmith et al. suggests that this heuristic performs comparatively well
+\subsection{Work}
+We require a Partition Refinement Algorithm (PRA):
+\begin{equation}
+C : \mathbf{D} \in \mathfrak{D} \mapsto C \left( \mathbf{D} \right) \in 2^R
+\end{equation}
+which specifies a two-partition refinement of any $\mathbf{D} \in \mathfrak{D}$.
+An obvious PRA is the Basic Binary Split
+\end{document}
