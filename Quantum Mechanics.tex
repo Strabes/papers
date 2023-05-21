@@ -20,19 +20,19 @@
 \section{Preliminaries}
 Quantum mechanics is characterized by the following principles:
 \begin{enumerate}
-\item The quantum state space, $\mathcal{H}$, is a complex, separable Hilbert space. A quantum state $\phi \in \mathcal{H}$ satisfies $\langle \phi , \phi \rangle = 1$
+\item The quantum state space, $\mathcal{H}$, is a complex, separable (has a countable, dense subset) Hilbert space. A quantum state $\phi \in \mathcal{H}$ satisfies $\langle \phi , \phi \rangle = 1$
 \item The observable/measurable quantities of quantum mechanics are represented by Hermitian operators on $\mathcal{H}$, that is $L: \mathcal{H} \rightarrow \mathcal{H} \ s.t. \ L = L^*$
 \item The possible results of a measurement are the eigenvalues of the corresponding operator.
-\item Given an observable $L$ with eigenvalues $\{\lambda_i\}$ and corresponding eigenspaces $\{E_i\}$, if the state vector of the system is $\ket{\Psi} \in \mathcal{H}$, then the probability of observing $\lambda_i$ is
+\item Given an observable $L$ with eigenvalues $\{\lambda_i\}$ and corresponding eigenspaces $\{E_i\}$, if the state vector of the system is $\Psi \in \mathcal{H}$, then the probability of observing $\lambda_i$ is
 \begin{equation}
-\mathbb{P}\left(\lambda_i\right)=\lvert \ket{P_{E_i} \Psi} \rvert^2
+\mathbb{P}\left(\lambda_i\right)=\lVert P_{E_i} \Psi \rVert^2
 \end{equation}
-where $\ket{P_{E_i} \Psi}$ is the projection of $\ket{\Psi}$ onto $E_i$.
+where $P_{E_i} \Psi$ is the projection of $\Psi$ onto $E_i$.
 \item The quantum state evolves across time according to a unitary operator $U$ ($UU^* = U^*U = I$) such the
 \begin{equation}
-\ket{\Psi \left( t \right)} = U\left(t\right) \ket{\Psi \left( 0 \right)}
+\Psi \left( t \right) = U\left(t\right) \Psi \left( 0 \right)
 \end{equation}
-where $\ket{ \Psi \left( t \right)}$ is the quantum state at time $t$ and $\ket{\Psi \left( 0 \right)}$ is the quantum state at time 0. $U$ is smooth in $t$. 
+where $\Psi \left( t \right)$ is the quantum state at time $t$ and $\Psi \left( 0 \right)$ is the quantum state at time 0. $U$ is smooth in $t$. 
 \end{enumerate}
 If we define the Hamiltonian $H\left(t\right)$ as
 \begin{equation}
@@ -40,7 +40,7 @@ H \left( t \right) = \frac{1}{i \hbar} \frac{\partial U}{\partial t} \left( t \r
 \end{equation}
 where $\hbar$ is Planck's constant, then we have
 \begin{equation}
-i \hbar \frac{\partial \ket{\Psi \left( t \right)}}{\partial t} = H \left( t \right) \ket{\Psi \left( t \right)}
+i \hbar \frac{\partial \Psi \left( t \right)}{\partial t} = H \left( t \right) \Psi \left( t \right)
 \end{equation}
 the generalized Schr\"{o}dinger equation.
 

@@ -99,7 +99,8 @@ so that
 \\
 &= \sum_{t=0}^{\infty} \gamma^t \int_S \int_A P \left( s_t = s | \pi \right) \pi(s,a,\theta) \triangledown_{\theta} \mathrm{ln}\pi(s,a,\theta) Q^{\pi} (s,a)dads
 \\
-&= \sum_{t=0}^{\infty} \gamma^t \int_S \int_A P \left( s_t = s, a_t = a | \pi \right) \triangledown_{\theta} \mathrm{ln}\pi(s,a,\theta) Q^{\pi} (s,a)dads
+&= \sum_{t=0}^{\infty} \gamma^t \int_S \int_A P \left( s_t = s, a_t = a | \pi \right) \triangledown_{\theta} \mathrm{ln}\pi(s,a,\theta) Q^{\pi} (s,a)dads \\
+&= \mathbb{E}_{s_{0:\infty},a_{0:\infty}} \left[ \sum_{t=0}^{\infty} \gamma^t \triangledown_{\theta} \mathrm{ln}\pi(s_t,a_t,\theta) Q^{\pi} (s_t,a_t) | \pi \right]
 \end{split}
 \end{equation}
 Additionally, as note in \cite{schulman2015}, for any function $f(s_{0:t},a_{0:t-1})$, 
@@ -135,6 +136,16 @@ Additionally, as note in \cite{schulman2015}, for any function $f(s_{0:t},a_{0:t
 &= 0
 \end{aligned}
 \end{equation}
+
+TODO: Explain why using advantage function for policy gradient method has lowest variance a la \cite{greensmith2004}
+
+\section{Policy Gradient Methods}
+
+TODO: Section on "vanilla" policy gradient methods.  
+  
+TODO: Section on Trust Region methods.  
+  
+TODO: Section on Proximal Policy Optimization a la \cite{schulmanppo}
 
 \section{Q-learning}
 
