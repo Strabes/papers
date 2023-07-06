@@ -86,6 +86,44 @@ so that the rows of $XY$ are linear combinations of the rows of $Y$.
 \end{equation}
 \end{definition}
 
+\subsection{Evaluating Text Quality}
+
+\begin{definition}[n-grams] The n-grams of a string $y = y_1...y_K$ are
+\begin{equation}
+G_n(y) = \{ y_1...y_n, y_2...y_{n+1}, ... , y_{K-n+1}...y_K \}
+\end{equation}
+Note that $G_n(y)$ is a set, not a multiset, so the elements of $G_n(y)$ are distinct.
+\end{definition}
+
+\begin{definition}[Substring Count] Given two strings, $s = s_1...s_M$ and $y = y_1...y_K$ the substring count of substring $s$ in $y$ is
+\begin{equation}
+C(s,y) = | \{i \in \mathbb{N} \ | \ i > 0, \ i+M \leq K, \ y_i...y_{i+M} = s \} |
+\end{equation}  
+\end{definition}
+
+\begin{definition}[Modified n-gram precision] Given a candidate corpus $\hat{S} = (\hat{y}^{(1)}, \hat{y}^{(2)}, ..., \hat{y}^{(M)})$ and corresponding reference corpi $S = (S_1, S_2, ..., S_M)$ where $S_i = (y^{(i,1)}, y^{(i,2)}, ..., y^{(i,N_i)})$, modified n-gram precision is defined as
+\begin{equation}
+p_n(\hat{S} , S) = \frac{\sum_{i=1}^M \sum_{s \in G_n(\hat{y}^{(i)})} \mathrm{min} (C(s, \hat{y}^{(i)}), \mathrm{max}_{y \in S_i} C(s,y))}{\sum_{i=1}^M \sum_{s \in G_n(\hat{y}^{(i)})} C(s, \hat{y})}
+\end{equation}
+\end{definition}
+
+\begin{definition}[Brevity penalty] Given a candidate corpus $\hat{S} = (\hat{y}^{(1)}, \hat{y}^{(2)}, ..., \hat{y}^{(M)})$ and corresponding reference corpi $S = (S_1, S_2, ..., S_M)$ where $S_i = (y^{(i,1)}, y^{(i,2)}, ..., y^{(i,N_i)})$, the brevity penalty is defined as
+\begin{equation}
+BP(\hat{S}, S) = e^{-(r/c-1)^+}
+\end{equation}
+where
+\begin{equation}
+c = \sum_{i=1}^M | \hat{y}^{(i)} |
+\end{equation}
+is the length of the candidate corpus and
+\begin{equation}
+r = \sum_{i=1}^M | \mathrm{arg} \mathrm{min}_{y \in S_i} \left( | |y| - |\hat{y}^{(i)}| | \right) |
+\end{equation}
+is the effective reference corpus length
+\end{definition}
+
+\subsubsection{Bilingual Evaluation Understudy (BLEU)}
+
 \section{Attention}
 
 
@@ -136,7 +174,7 @@ In Multihead Self-Attention, $X_Q = X_K = X_V$ so that $d_{model} \coloneqq d_g 
 
 \subsection{Transformer Block}
 
-A single transformer block takes an input tensor $X_0$ and then:
+A single transformer block (see Figure \ref{fig:transformerblock}) takes an input tensor $X_0$ and then:
 \begin{enumerate}
 \item Applies a multi-head attention layer to $X_0$ to produce $X_1$
 \item Adds $X_0$ and $X_1$ and applies normalization to produce $X_2$
@@ -215,7 +253,7 @@ label={[align=center]left:Transformer\\Block}] (encoder) {};
 
 \section{Attention is All You Need \cite{vaswani2017attention}}
 
-Multi-head self-attention was introduced in the paper Attention is All You Need \cite{vaswani2017attention}, which used the architecture in \ref{fig:fulltransformer} for a translation task.
+Multi-head self-attention was introduced in the paper Attention is All You Need \cite{vaswani2017attention}, which used the architecture in Figure \ref{fig:fulltransformer} for a translation task.
 
 \begin{figure}
 \centering
@@ -258,7 +296,17 @@ where $U = (u_{-k},...,u_{-1})$ is the context vector of tokens, $n$ is the numb
 \begin{equation}
 L_2(\mathcal{C}) = \sum_{(x,y)} \mathrm{log} P (y|x^1,...,x^m)
 \end{equation}
+where
+\begin{equation}
+P (y|x^1,...,x^m) = \mathrm{softmax}(h_l^mW_y)
+\end{equation}
+$h_l^m$ is the last output of the final transformer block and $W_y$ are learned parameters. 
 
+During fine-tuning, the authors continued to use the masked language modeling to improve generalization and accelerate convergence. Hence, the final fine-tuning objective was 
+\begin{equation}
+L_3(\mathcal{C}) = L_2{\mathcal{C}} + \lambda L_1(\mathcal{C})
+\end{equation}
+with a tuning parameter $\lambda$ that trades off between the two objectives of performance on the fine-tuning task and generalization.
 
 \begin{figure}
 \centering
@@ -326,7 +374,21 @@ h_{\tau+1}^n = \mathtt{transformer\_block}(q_{\tau+1}^n,k_{\tau+1}^n,v_{\tau+1}^
 
 \subsection{Generating Long Sequences with Sparse Transformers}
 
-In \cite{child2019generating}, the authors scale transformers to longer sequences by factorizing the self-attention mechanism.
+In \cite{child2019generating}, the authors scale transformers to longer sequences by factorizing the self-attention mechanism. Let $S = \{S_1,...,S_L \}$, where $S_i \subseteq \{1,...,L \} \ \forall i \leq L$. Then
+
+\begin{equation}
+\mathrm{Attend}(X,S) = \left( a(X_{\cdot i}, S_i) \right)_{i \in \{1,...,L\}}
+\end{equation}
+
+\begin{equation}
+a(X_{\cdot i}, S_i) = \mathrm{softmax}\left( \frac{(W_qX_{\cdot i})K_{S_i}'}{\sqrt{d}} \right) V_{S_i}
+\end{equation}
+
+\begin{equation}
+K_{S_i} = \left( W_k X_{\cdot j} \right)_{j \in S_i} \ \ \ \ V_{S_i} = \left( W_v X_{\cdot j} \right)_{j \in S_i}
+\end{equation}
+
+For full self-attention in an autoregressive model, $S_i = \{ j : j \leq i \}$ so that each element attends to all previous positions and its own position.
 
 \begin{figure}
 \centering
@@ -335,11 +397,31 @@ In \cite{child2019generating}, the authors scale transformers to longer sequence
   \label{fig:sparse_transformer_attention}
 \end{figure}
 
+\subsection{Longformer \cite{beltagy2020longformer}}
+
+\begin{figure}
+\centering
+  \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{transformers/longformer.png}
+  \caption{Longformer Attention \cite{beltagy2020longformer}}
+  \label{fig:longformer}
+\end{figure}
+
 \section{Improving Fine-tuning}
 
 \subsection{LoRA: Low-Rank Adaptation of Large Language Models \cite{hu2021lora}}
 
+LoRA is a method for fine-tuning large, pre-trained transformers with limited fine-tuning data and/or compute. LoRA freezes pre-trained model weights and injects trainable rank decomposition matrices into each layer of the transformer architecture, significantly reducing the number of trainable parameters for downstream tasks.
+
+\begin{figure}
+\centering
+  \includegraphics[keepaspectratio]{transformers/lora_overview.png}
+  \caption{LoRA Fine-tuning Strategy \cite{DBLP:journals/corr/abs-2106-09685}}
+  \label{fig:lora-overview}
+\end{figure}
+
 \section{Relative Position Embeddings}
+
+Relative position embeddings were introduced by \cite{shaw2018selfattention}.
 
 Given relative position embedding matrix $E^r \in \mathbb{R}^{L \times d_{model}}$ and matrix $X \in \mathbb{R}^{L \times d_{model}}$
 
@@ -356,12 +438,20 @@ $V \leftarrow \mathrm{vec} (B^T)$\;
 $C \leftarrow \{c_{ij} = V_{(i-1)L + j} \ | \ i \leq L, j \leq L \} \in \mathbb{R}^{L+1 \times L}$\;
 $D \leftarrow \{d_{ij} = c_{i+1,j} \ | \ i \leq L, j \leq L\}$\;
 \Return{$D$}\;
-\caption{Relative Position Embedding}\label{rel-pos-emb}
+\caption{Relative Position Embedding of \cite{huang2018music}}\label{rel-pos-emb}
 \end{algorithm}
+
+\begin{figure}
+\centering
+  \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{transformers/relative_global_attention.png}
+  \caption{Relative Global Attention \cite{huang2018music}}
+  \label{fig:relative_global_attention}
+\end{figure}
 
 
 \section{Byte-Pair Encoding} \label{BPE}
 
+\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=Python, caption=Byte-Pair Encoding]
 import re, collections
 
@@ -394,6 +484,7 @@ for i in range(num_merges):
     print(best)
 
 \end{lstlisting}
+\end{minipage}
 
 Papers to cover:
 
