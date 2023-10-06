@@ -103,7 +103,7 @@ C(s,y) = | \{i \in \mathbb{N} \ | \ i > 0, \ i+M \leq K, \ y_i...y_{i+M} = s \} 
 
 \begin{definition}[Modified n-gram precision] Given a candidate corpus $\hat{S} = (\hat{y}^{(1)}, \hat{y}^{(2)}, ..., \hat{y}^{(M)})$ and corresponding reference corpi $S = (S_1, S_2, ..., S_M)$ where $S_i = (y^{(i,1)}, y^{(i,2)}, ..., y^{(i,N_i)})$, modified n-gram precision is defined as
 \begin{equation}
-p_n(\hat{S} , S) = \frac{\sum_{i=1}^M \sum_{s \in G_n(\hat{y}^{(i)})} \mathrm{min} (C(s, \hat{y}^{(i)}), \mathrm{max}_{y \in S_i} C(s,y))}{\sum_{i=1}^M \sum_{s \in G_n(\hat{y}^{(i)})} C(s, \hat{y})}
+p_n(\hat{S} , S) = \frac{\sum_{i=1}^M \sum_{s \in G_n(\hat{y}^{(i)})} \mathrm{min} (C(s, \hat{y}^{(i)}), \mathrm{max}_{y \in S_i} C(s,y))}{\sum_{i=1}^M \sum_{s \in G_n(\hat{y}^{(i)})} C(s, \hat{y}^{(i)})}
 \end{equation}
 \end{definition}
 
@@ -119,10 +119,22 @@ is the length of the candidate corpus and
 \begin{equation}
 r = \sum_{i=1}^M | \mathrm{arg} \mathrm{min}_{y \in S_i} \left( | |y| - |\hat{y}^{(i)}| | \right) |
 \end{equation}
-is the effective reference corpus length
+is the effective reference corpus length.
 \end{definition}
 
-\subsubsection{Bilingual Evaluation Understudy (BLEU)}
+\begin{definition}[Bilingual Evaluation Understudy (BLEU)] Given a candidate corpus $\hat{S} = (\hat{y}^{(1)}, \hat{y}^{(2)}, ..., \hat{y}^{(M)})$, a corresponding reference corpi $S = (S_1, S_2, ..., S_M)$ where $S_i = (y^{(i,1)}, y^{(i,2)}, ..., y^{(i,N_i)})$, and $w \in \{ \left[ 0, 1\right]^{\infty} : \sum_{i=1}^{\infty} w_i = 1 \}$, the BLEU score is defined as:
+\begin{equation}
+BLEU_w (\hat{S}, S) = BP (\hat{S}, S) \cdot \mathrm{exp} \left( \sum_{n=1}^{\infty} w_n \mathrm{ln} p_n ( \hat{S} , S) \right)
+\end{equation}
+\end{definition}
+
+\begin{definition}[ROUGE-n] Given a candidate sentence $\hat{y}$ and a corresponding corpus of reference sentences $S = \{ y^{(1)}, y^{(2)}, ..., y^{(N)} \}$, $ROUGE-n$ is defined as
+\begin{equation}
+ROUGE-n (\hat{y}, S) = \sum_{i=1}^N \frac{ \sum_{s \in G_n(y^{(i)})} \mathrm{min} (C(s,\hat{y}), C(s, y) )}{ \sum_{s \in G_n(y^{(i)})} C(s,y)}
+\end{equation}
+\end{definition}
+
+Note that the definition of ROUGE metrics varies across sources. The definitions above align with \cite{schluter-2017-limits}.
 
 \section{Attention}
 
@@ -321,9 +333,16 @@ with a tuning parameter $\lambda$ that trades off between the two objectives of 
 
 \section{Language models are few-shot learners \cite{brown2020gpt3}}
 
-\cite{brown2020gpt3} introduced GPT-3.
+\cite{brown2020gpt3} is the paper from OpenAI that introduced GPT-3. GPT-3 is again a transformer decoder-only model pre-trained on a curated version of the Common Crawl dataset. Again, OpenAI significantly scaled up the size of the model - the largest GPT-3 model has 175B parameters. Like GPT-2, GPT-3 was not fine-tuned for any specific task, but still demonstrated near-SOTA performance across a range of NLP tasks. GPT-3 performed better with infew-shot contexts; that is, when examples demonstrating desired output for the task was provided as part of the prompt.
 
 \section{Training language models to follow instructions with human feedback \cite{ouyang2022training}}
+
+This is the paper from OpenAI that introduced Instruct GPT and the use of Reinforcement Learning from Human Feedback (RLHF). Instruct GPT uses a pre-trained GPT 3 model and fine-tunes it in three steps:
+\begin{enumerate}
+\item Given a set of prompts and desired responses, the model is fine-tuned on these examples in a supervised manor (SFT).
+\item Given a prompt, several model outputs are sampled and a human labeler ranks them from best to worst. A dataset generated in this manor is then used to train a reward model (RM) (also a GPT 3 model).
+\item Given a prompt, the model from 1 generates an output, the reward model calculates a reward and then the model is updated using reinforcement learning via proximal policy optimization.
+\end{enumerate}
 
 \begin{figure}
 \centering
@@ -364,6 +383,8 @@ h_{\tau+1}^n = \mathtt{transformer\_block}(q_{\tau+1}^n,k_{\tau+1}^n,v_{\tau+1}^
 \end{array}
 \end{equation}
 
+where $SG$ is the stop-gradient function and $\circ$ denotes concatenation of vectors. Compared to the vanilla transformer, the keys and values in TransformerXL are constructed with an extended context, creating what is essentially a segment-level recurrence in hidden states.
+
 \begin{figure}
 \centering
   \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{transformers/transformerXL_model.png}
@@ -390,6 +411,15 @@ K_{S_i} = \left( W_k X_{\cdot j} \right)_{j \in S_i} \ \ \ \ V_{S_i} = \left( W_
 
 For full self-attention in an autoregressive model, $S_i = \{ j : j \leq i \}$ so that each element attends to all previous positions and its own position.
 
+On the other hand, factorized self-attention uses $p$ separate attention heads, where the $m$th head defines a subset of the indices $A_i^{(m)} \subset \{j : j \leq i \}$. In particular, the authors consider two factorizations:
+
+\begin{itemize}
+\item Strided Attention sets $A_i^{(1)} = \{t,t+1,...,i \}$ for $t = \mathrm{max}(0,i-l)$ and $A_i^{(2)} = \{j : (i-j) \mathrm{mod} l =0 \}$.
+\item Fixed Attention sets $A_i^{(1)} = \{j : (\lfloor j/l \rfloor = \lfloor i/l \rfloor) \}$ and $A_i^{(2)} = \{ j : j \mathrm{mod} l \in \{ t, t+1,...,l \}, t = l-c \}$.
+\end{itemize}
+
+where $l$ is the stride length and c is a hyperparameter. Strided attention performs best for data with structure that aligns with the stride, like images. Fixed attention performs well on data without a periodic structure, such as text.
+
 \begin{figure}
 \centering
   \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{transformers/sparse_transformer_attention.png}
@@ -399,11 +429,33 @@ For full self-attention in an autoregressive model, $S_i = \{ j : j \leq i \}$ s
 
 \subsection{Longformer \cite{beltagy2020longformer}}
 
+Longformer is a paper from AllenAI that introduced the Longformer model. Similar to sparse transformers, Longformer alters the attention pattern so that not all positions attend to all other positions. Longformer reduces the computational complexity $O(n^2)$ of full attention to $O(n \times w)$ by using a sliding window of size $w$. The paper also dilates the windows with gaps of size dilation $d$ so that the final receptive field is $l \times d \times w$.
+
 \begin{figure}
 \centering
   \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{transformers/longformer.png}
   \caption{Longformer Attention \cite{beltagy2020longformer}}
   \label{fig:longformer}
+\end{figure}
+
+\subsection{Big Bird: Transformers for Longer Sequences}
+
+\begin{figure}
+\centering
+  \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{transformers/big_bird.png}
+  \caption{Big Bird Attention \cite{bigbird}}
+  \label{fig:bigbird}
+\end{figure}
+
+\section{Distilling}
+
+\subsection{Distilling Step-by-Step! Outperforming Larger Language Models with Less Training Data and Smaller Model Sizes}
+
+\begin{figure}
+\centering
+  \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{transformers/distilling_step_by_step.png}
+  \caption{Distilling Step-by-Step \cite{hsieh2023distilling}}
+  \label{fig:distilling_step_by_step}
 \end{figure}
 
 \section{Improving Fine-tuning}
@@ -412,11 +464,22 @@ For full self-attention in an autoregressive model, $S_i = \{ j : j \leq i \}$ s
 
 LoRA is a method for fine-tuning large, pre-trained transformers with limited fine-tuning data and/or compute. LoRA freezes pre-trained model weights and injects trainable rank decomposition matrices into each layer of the transformer architecture, significantly reducing the number of trainable parameters for downstream tasks.
 
+Given a pre-trained weight matrix $W_0 \in \mathbb{R}^{d \times k}$, during fine-tuning we replace $W_0$ with $\mathrm{frozen}(W_0) + BA$ where $B \in \mathbb{R}^{d \times r}$ and $A \in \mathbb{R}^{r \times k}$ are trainable parameters, $\mathrm{rank}(r) \ll \mathrm{min}(d,k)$, $A$ has a random Gaussian initialization and $B$ is initialized to zero.
+
 \begin{figure}
 \centering
-  \includegraphics[keepaspectratio]{transformers/lora_overview.png}
+  \includegraphics[width=0.4\textwidth]{transformers/lora_overview.png}
   \caption{LoRA Fine-tuning Strategy \cite{DBLP:journals/corr/abs-2106-09685}}
   \label{fig:lora-overview}
+\end{figure}
+
+\subsection{QLoRA}
+
+\begin{figure}
+\centering
+  \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{transformers/bfloat16.png}
+  \caption{bfloat16 \cite{bfloat16img}}
+  \label{fig:bfloat16}
 \end{figure}
 
 \section{Relative Position Embeddings}
@@ -447,6 +510,10 @@ $D \leftarrow \{d_{ij} = c_{i+1,j} \ | \ i \leq L, j \leq L\}$\;
   \caption{Relative Global Attention \cite{huang2018music}}
   \label{fig:relative_global_attention}
 \end{figure}
+
+\section{Prompt Design and Tuning}
+
+Need to cover \cite{li2021prefixtuning} and \cite{lester2021power}
 
 
 \section{Byte-Pair Encoding} \label{BPE}
@@ -486,16 +553,30 @@ for i in range(num_merges):
 \end{lstlisting}
 \end{minipage}
 
-Papers to cover:
+\section{Numeric Types and Precision}
 
-- Attention is All You Need
-- BERT
-- Transformer XL
-- GPT papers
-- Sparse Transformers
-- Roformer
-- Roberta
-- albert
+\begin{figure}
+\centering
+  \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{transformers/fp32-wikipedia.png}
+  \caption{float32 \cite{float32img}}
+  \label{fig:float32}
+\end{figure}
+
+
+More papers to cover:
+
+\begin{enumerate}
+\item Roformer
+\item FLAN T5 - Fine-tuning Language Net - instruction tuning
+\item Roberta
+\item Albert
+\item Switch Transformer
+\item GLaM
+\item QLoRA
+\item Unigrams
+\item SentencePiece
+\end{enumerate}
+
 
 \bibliographystyle{alpha} % We choose the "plain" reference style
 \bibliography{transformers} % Entries are in the refs.bib file

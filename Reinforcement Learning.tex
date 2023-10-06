@@ -14,10 +14,17 @@
 \usepackage{varioref}
 \usepackage{hyperref}
 \labelformat{algocf}{\textit{Algorithm}\,(#1)}
+\usepackage{parskip}
+\setlength{\parindent}{0pt}
 \author{Greg Strabel}
 \title{Reinforcement Learning}
 \begin{document}
 \maketitle
+
+\section{What is Reinforcement Learning?}
+
+Reinforcement Learning is an area of machine learning that seeks to train models to take actions in a dynamic, stochastic environment in order to maximize a cumulative reward.
+
 \section{Key Concepts}
 \begin{definition} A \textbf{Markov Decision Process} is a 4-tuple $(S,A,P,R)$, where:
 \begin{itemize}
@@ -57,6 +64,13 @@ The action-value of a policy $\pi$ for a Markov Decision Process $(S,A,P,R)$ is 
 \begin{split}
 Q^{\pi} (s,a) = \mathbb{E}_{s_{1:\infty},a_{1:\infty}} \left[ \sum_{t=0}^{\infty} \gamma^t R(s_t, a_t) | \pi, s_0 = s, a_0 = a \right]
 \end{split}
+\end{equation}
+\end{definition}
+
+\begin{definition}
+The advantage function of a policy $\pi$ for a Markov Decision Process $(S,A,P,R)$ is the function $A^{\pi} : S \times A \rightarrow \mathbb{R}$ defined as
+\begin{equation}
+A^{\pi} (s,a) = Q^{\pi} (s,a) - V^{\pi} (s)
 \end{equation}
 \end{definition}
 
@@ -137,7 +151,22 @@ Additionally, as note in \cite{schulman2015}, for any function $f(s_{0:t},a_{0:t
 \end{aligned}
 \end{equation}
 
-TODO: Explain why using advantage function for policy gradient method has lowest variance a la \cite{greensmith2004}
+It follows that for any function $f(s_{0:t},a_{0:t-1})$,
+
+\begin{equation}
+\triangledown_{\theta}J(\theta) = \mathbb{E}_{s_{0:\infty},a_{0:\infty}} \left[ \sum_{t=0}^{\infty} \gamma^t \triangledown_{\theta} \mathrm{ln}\pi(s_t,a_t,\theta) \left[ Q^{\pi} (s_t,a_t) - f(s_{0:t},a_{0:t-1}) \right] | \pi \right]
+\end{equation}
+
+In particular, this implies
+
+\begin{equation}
+\begin{split}
+\triangledown_{\theta}J(\theta) &= \mathbb{E}_{s_{0:\infty},a_{0:\infty}} \left[ \sum_{t=0}^{\infty} \gamma^t \triangledown_{\theta} \mathrm{ln}\pi(s_t,a_t,\theta) \left[ Q^{\pi} (s_t,a_t) - V^{\pi}(s_t) \right] | \pi \right] \\
+&= \mathbb{E}_{s_{0:\infty},a_{0:\infty}} \left[ \sum_{t=0}^{\infty} \gamma^t \triangledown_{\theta} \mathrm{ln}\pi(s_t,a_t,\theta) A^{\pi} (s_t,a_t) | \pi \right]
+\end{split}
+\end{equation}
+
+Analysis in \cite{greensmith2004} shows that when estimating $\triangledown_{\theta}J(\theta)$ from a sample path of the MDP, using the advantage function results in the lowest possible variance of the estimator.
 
 \section{Policy Gradient Methods}
 
