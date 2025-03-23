@@ -23,7 +23,7 @@
 
 \section{What is Reinforcement Learning?}
 
-Reinforcement Learning is an area of machine learning that seeks to train models to take actions in a dynamic, stochastic environment in order to maximize a cumulative reward.
+Reinforcement Learning is an area of machine learning that seeks to train models to take actions in a dynamic, stochastic environment in order to maximize a cumulative expected reward.
 
 \section{Key Concepts}
 \begin{definition} A \textbf{Markov Decision Process} is a 4-tuple $(S,A,P,R)$, where:
@@ -170,10 +170,26 @@ Analysis in \cite{greensmith2004} shows that when estimating $\triangledown_{\th
 
 \section{Policy Gradient Methods}
 
-TODO: Section on "vanilla" policy gradient methods.  
-  
-TODO: Section on Trust Region methods.  
-  
+\subsection{Basic Policy Gradient Method}
+
+All policy gradient methods use a version of the same two-step procedure:
+
+\begin{enumerate}
+\item{Estimate the gradient of the policy function}
+\item{Use the estimated gradient in a stochastic gradient ascent algorithm}
+\end{enumerate}
+
+The estimate of the gradient typically takes the form
+
+\begin{equation}
+\hat{g} = \mathbb{\hat{E}}_t \left[ \triangledown_{\theta} \mathrm{ln} \pi_{\theta} \left(s_t, a_t, \theta \right) \hat{A}_t \right]
+\end{equation}
+
+\subsection{Trust Region Policy Optimization} 
+ 
+Trust Region Policy Optimization was introduced by \cite{trpo}.
+
+\subsection{Proximal Policy Optimization}
 TODO: Section on Proximal Policy Optimization a la \cite{schulmanppo}
 
 \section{Q-learning}

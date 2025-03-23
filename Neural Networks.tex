@@ -81,7 +81,7 @@ At test time, rather than use~\eqref{eq5}, we use:
 \psi _{k} = \sum_{l : \left( l , k \right) \in A} w_{kl} p_{kl} o_{l} + \beta_k
 \end{equation}
 \section{Batch Normalization}
-One complication that arises in training deep neural networks is the fact that the distribution of the inputs to each layer change during training as parameters from previous layers are updated. This change is known as internal covariate shift. Ioffe and Szegedy (2015) introduced Batch Normalization to normalize layers' inputs during mini-batch training. There is more than one way to normalize; in the discussion below I deviate slightly from Ioffe and Szegedy (2015).
+One complication that arises in training deep neural networks is the fact that the distribution of the inputs to each layer change during training as parameters from previous layers are updated. This change is known as internal covariate shift. \cite{ioffe2015batch} introduced Batch Normalization to normalize layers' inputs during mini-batch training. There is more than one way to normalize; in the discussion below I deviate slightly from \cite{ioffe2015batch}.
 Suppose we have a mini-batch $\{ x_i , y_i \}_{i=1...m}$. During the forward pass, rather that using
 \begin{equation}
 o_{ki} = \sigma_k \left( \psi_{ki} \right)
@@ -131,6 +131,9 @@ and
 \theta_k \leftarrow \theta_k - \eta \sum_{i=1}^m \sum_{l:\left(k,l\right) \in A} \lambda_{li} w_{lk} \sigma_k' \left( \widehat{\psi}_{ki} \right)
 \end{equation}
 
+\section{Layer Normalization}
+Layer normalization was introduced by \cite{ba2016layer}
+
 \section{Variations of Stochastic Gradient Descent}
 \subsection{Implicit SGD}
 \subsection{Momentum}
@@ -143,4 +146,8 @@ followed by
 \begin{align}
 w \leftarrow w + \Delta w && and && \beta \leftarrow \beta + \Delta \beta
 \end{align}
+
+\bibliographystyle{alpha} % We choose the "plain" reference style
+\bibliography{neuralnetworks} % Entries are in the refs.bib file
+
 \end{document}

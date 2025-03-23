@@ -54,10 +54,24 @@
 \tikzstyle{bluebox} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black, fill=blue!30]
 \tikzstyle{arrow} = [thick,->,>=stealth]
 
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks,
+    citecolor=black,
+    filecolor=black,
+    linkcolor=black,
+    urlcolor=black
+}
+
 \author{Greg Strabel}
 \title{Transformers}
 \begin{document}
 \maketitle
+
+\tableofcontents
+
+\section{Summary}
+This document provides a brief overview of many of the most important papers on transformers, the neural network architecture that has produced significant advances in NLP in recent years.
 
 \section{Preliminaries}
 
@@ -83,6 +97,14 @@ so that the rows of $XY$ are linear combinations of the rows of $Y$.
 \begin{definition}[Softmax] The $\mathrm{softmax}$ function $\sigma : \mathbb{R}^K \rightarrow \mathbb{R}^K$ is
 \begin{equation}
 \sigma(z)_i = \frac{e^{z_i}}{\sum_{j=1}^K e^{z_j}}
+\end{equation}
+\end{definition}
+
+\subsection{Softplus}
+
+\begin{definition}[Softplus] The $\mathrm{Softplus}$ function is a smooth approximation to the ReLU function and constrains the output to always be positive. It is defined as:
+\begin{equation}
+Softplus(x) = \frac{1}{\beta} \cdot \mathrm{log} \left( 1 + \mathrm{exp} \left( \beta \cdot x \right) \right)
 \end{equation}
 \end{definition}
 
@@ -182,7 +204,7 @@ A^i = \mathrm{Attention} \left(Q^i,K^i,V^i \right) \in \mathbb{R}^{d_l \times d_
 
 \subsection{Multihead Self-Attention}
 
-In Multihead Self-Attention, $X_Q = X_K = X_V$ so that $d_{model} \coloneqq d_g = d_w = d_u$, $L \coloneqq d_l = d_s$ and $\mathrm{Multihead}\left(X_Q, X_K, X_V \right) \in \mathbb{R}^{L \times d_o}$. If we also have $d_o = d_{model}$ then we get the Multihead Self-Attention described in \cite{vaswani2017attention}{Attention Is All You Need}
+In Multihead Self-Attention, $X_Q = X_K = X_V$ so that $d_{model} \coloneqq d_g = d_w = d_u$, $L \coloneqq d_l = d_s$ and $\mathrm{Multihead}\left(X_Q, X_K, X_V \right) \in \mathbb{R}^{L \times d_o}$. If we also have $d_o = d_{model}$ then we get the Multihead Self-Attention described in Attention Is All You Need (\cite{vaswani2017attention}).
 
 \subsection{Transformer Block}
 
@@ -333,7 +355,7 @@ with a tuning parameter $\lambda$ that trades off between the two objectives of 
 
 \section{Language models are few-shot learners \cite{brown2020gpt3}}
 
-\cite{brown2020gpt3} is the paper from OpenAI that introduced GPT-3. GPT-3 is again a transformer decoder-only model pre-trained on a curated version of the Common Crawl dataset. Again, OpenAI significantly scaled up the size of the model - the largest GPT-3 model has 175B parameters. Like GPT-2, GPT-3 was not fine-tuned for any specific task, but still demonstrated near-SOTA performance across a range of NLP tasks. GPT-3 performed better with infew-shot contexts; that is, when examples demonstrating desired output for the task was provided as part of the prompt.
+\cite{brown2020gpt3} is the paper from OpenAI that introduced GPT-3. GPT-3 is again a transformer decoder-only model pre-trained on a curated version of the Common Crawl dataset. Again, OpenAI significantly scaled up the size of the model - the largest GPT-3 model has 175B parameters. Like GPT-2, GPT-3 was not fine-tuned for any specific task, but still demonstrated near-SOTA performance across a range of NLP tasks. GPT-3 performed better in few-shot contexts; that is, when examples demonstrating desired output for the task ere provided as part of the prompt.
 
 \section{Training language models to follow instructions with human feedback \cite{ouyang2022training}}
 
@@ -351,9 +373,37 @@ This is the paper from OpenAI that introduced Instruct GPT and the use of Reinfo
   \label{fig:instructgpt}
 \end{figure}
 
-\section{BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding}
+\section{Encoder only transformers}
 
-\cite{devlin2019bert} was the first paper to introduce BERT models - transformer encoder only models that can be fine-tuned for a variety of tasks.
+\subsection{BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding}
+
+\cite{devlin2019bert} was the first paper to introduce BERT models - transformer encoder only models that can be fine-tuned for a variety of tasks. BERT is pretrained using two methods:
+
+\begin{enumerate}
+\item Masked Language Modeling (MLM)
+\item Next Sentence Prediction (NSP)
+\end{enumerate}
+
+\subsection{RoBERTa}
+
+\cite{liu2019robertarobustlyoptimizedbert} is a paper from the University of Washington and Facebook that improved the performance of BERT using several modifications, most importantly:
+
+\begin{enumerate}
+\item Pretraining the model on much more data for much longer
+\item Dropping Next Sentence Prediction (NSP) as an objective
+\item Dynamically masking tokens instead of masking the same tokens in each sequence for every training epoch
+\end{enumerate}
+
+\subsection{BART}
+
+\cite{lewis2019bart} introduced BART and showed that model performance could be improved by masking spans of text in the transformer encoder. See Figure \ref{fig:bart}.
+
+\begin{figure}
+\centering
+  \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{transformers/bart.png}
+  \caption{BART \cite{lewis2019bart}}
+  \label{fig:bart}
+\end{figure}
 
 \section{Scaling Transformers to Longer Sequences}
 
@@ -449,7 +499,13 @@ Longformer is a paper from AllenAI that introduced the Longformer model. Similar
 
 \section{Distilling}
 
+\subsection{DistilBert, a distilled version of BERT: smaller, faster, cheaper and lighter}
+
+\cite{sanh2020distilbert} is the paper from Huggingface that introduced model distillation, whereby a large teacher model is used to train a smaller student model. The authors were able to reduce the size of a BERT model by 40\% while retaining 97\% of its language understanding capabilities and being 60\% faster.
+
 \subsection{Distilling Step-by-Step! Outperforming Larger Language Models with Less Training Data and Smaller Model Sizes}
+
+\cite{hsieh2023distilling} is a paper from U. Washington and Google that provided a technique for distilling knowledge from LLMs by prompting them for rationales for their outputs and then training a smaller model on the rationales. See Figure \ref{fig:distilling_step_by_step}.
 
 \begin{figure}
 \centering
@@ -473,7 +529,70 @@ Given a pre-trained weight matrix $W_0 \in \mathbb{R}^{d \times k}$, during fine
   \label{fig:lora-overview}
 \end{figure}
 
-\subsection{QLoRA}
+\subsection{QLoRA: Efficient Finetuning of Quantized LLMs}
+
+\cite{dettmers2023qlora} is the paper that introduced the Guanaco family of models, which combined LoRA with a quantization method for efficiently finetuning LLMs with limited compute and memory. The authors of the paper were able to finetune a LLaMA 65B parameter model, which usually would require $>$780GB of GPU memory, on a single GPU with $<$48GB without degrading runtime or decreasing performance.
+
+To quantize a 32-bit floating point (FP32) into an Int8 tensor with range $\left[-127, 127 \right]$:
+
+\begin{equation}
+X^{\mathrm{Int8}} = \mathrm{round} \left( \frac{127}{\mathrm{absmax} \left( X^{\mathrm{FP32}} \right) } X^{\mathrm{FP32}} \right) = \mathrm{round} \left( c^{\mathrm{FP32}} \cdot X^{\mathrm{FP32}} \right)
+\end{equation}
+
+where $c^{\mathrm{FP32}}$ is a quantization constant. To dequantize, calculate:
+
+\begin{equation}
+\mathrm{dequant} \left( c^{\mathrm{FP32}} , X^{\mathrm{Int8}} \right) = \frac{X^{\mathrm{Int8}}}{c^{\mathrm{FP32}}} = X^{\mathrm{FP32}}
+\end{equation}
+
+One issue with quantization is that outliers in the input tensor can produce quantization bins that are not used well, that is the distribution of numbers quantized into the bins is very far from uniform. Two ways to prevent this are to:
+\begin{enumerate}
+\item chunk the input tensor into $B$ blocks which are independently quantized, producing $B$ quantization constants $\{c_i : 1 \leq i \leq B \}$ 
+\item quantize into the quantiles of the input tensor rather than into linearly-spaced bins.
+\end{enumerate}
+
+\cite{dettmers2023qlora} use 4-bit normal float quantile quantization. To perform a $k$-bit normal float quantile quantization:
+\begin{enumerate}
+ \item Calculate \begin{equation}
+ q_i = \begin{cases}
+ \frac{i}{2^k} & 1 \leq i \leq 2^{k-1} \\
+ \frac{1}{2} + \frac{1}{2} \frac{i - 2^{k-1}}{2^{k-1}+1} & 2^{k-1} < i \leq 2^k
+ \end{cases}
+ \end{equation}
+ \item Calculate $x_i = Q(q_i) \ \ \forall i$, where $Q$ is the quantile function of the standard Normal distribution. 
+ \item Calculate \begin{equation}
+ z_i = \begin{cases}
+ \frac{x_i}{|x_1|} & 1 \leq i \leq 2^{k-1} \\
+ \frac{x_i}{|x_{2^k}|} & 2^{k-1} < i \leq 2^k
+ \end{cases}
+ \end{equation}
+\end{enumerate}
+
+\cite{dettmers2023qlora} take quantization one step further with double quantization whereby they quantize the quantization constants. In particular they take the quantization constants from first stage 4-bit normal float quantile quantization and quantize these. The output of a singular linear layer is now calculated as:
+
+\begin{equation}
+Y^{BF16} = X^{BF16} \mathrm{doubleDequant}(c_1^{FP32},c_2^{FP8},W^{NF4}) + X^{BF16}L_1^{BF16}L_2^{BF16},
+\end{equation}
+
+where $\mathrm{doubleDequant}(\cdot)$ is defined as:
+
+\begin{equation}
+\mathrm{doubleDequant}(c_1^{FP32},c_2^{FP8},W^{NF4}) = \mathrm{dequant}\left(\mathrm{dequant}\left(c_1^{FP32},c_2^{FP8}\right), W^{NF4} \right)
+\end{equation}
+
+Data types used in QLoRA are:
+\begin{enumerate}
+ \item Pre-trained model weights
+ \begin{enumerate}
+ \item $N$ 4-bit Normal Float to store the double quantized values
+ \item $\frac{N}{B_1}$ 8-bit FP8 to store the first quantization constants
+ \item $\frac{N}{B_1B_2}$ 32-bit FP32 to store the second quantization constants
+ \end{enumerate}
+ \item Optimizer state - 32-bits per LoRA adapter parameter in 2 bfloat16
+ \item LoRA weights - 16-bits per LoRA adapter parameter in bfloat16
+ \item Activation gradients - 16-bit bfloat16
+ \item LoRA weight gradients in bfloat16
+\end{enumerate}
 
 \begin{figure}
 \centering
@@ -513,8 +632,103 @@ $D \leftarrow \{d_{ij} = c_{i+1,j} \ | \ i \leq L, j \leq L\}$\;
 
 \section{Prompt Design and Tuning}
 
-Need to cover \cite{li2021prefixtuning} and \cite{lester2021power}
+\subsection{Prefix Tuning}
 
+\cite{li2021prefixtuning} is a paper from researchers at Stanford that introduced prefix tuning. Prefix tuning freezes the parameters of a pretrained transformer but then prefixes \underline{each} layer with a set of tuneable parameters. 
+
+\begin{figure}
+\centering
+  \includegraphics[width=0.6\textwidth]{transformers/prefix_tuning.png}
+  \caption{Prefix-tuning \cite{li2021prefixtuning}}
+  \label{fig:prefix_tuning}
+\end{figure}
+
+\begin{figure}
+\centering
+  \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{transformers/prefix_tuning2.png}
+  \caption{Prefix-tuning Example \cite{li2021prefixtuning}}
+  \label{fig:prefix_tuning2}
+\end{figure}
+
+In particular, given inputs $x$ and outputs $y$, let
+\begin{equation}
+z = \begin{cases}
+[PREFIX ; x; y] & \mathrm{Encoder-only\ transformer} \\
+[PREFIX ; x ; PREFIX' ; y] & \mathrm{Encoder-Decoder\ transformer}
+\end{cases}
+\end{equation}
+
+Let $\mathtt{P}$ denote the indices of the prefixes. For a pretrained model with $L$ layers and model dimension $d$ and prefix length $|\mathtt{P}|$, we have a matrix of trainable prefix parameters $P_{\theta} \in \mathbb{R}^{|\mathtt{P}|} \times \mathbb{R}^d$. The activations at time step $t$ for layer $l$ are then
+
+\begin{equation}
+h_t^{(l)} = \begin{cases}
+P_{\theta} \left[t,: \right] & t \in \mathtt{P} \\
+\mathrm{LM}_{\phi} (z_t, h_{<t})^{(l)} & \mathrm{otherwise}
+\end{cases}
+\end{equation}
+
+
+\subsection{Prompt Tuning}
+
+\cite{lester2021power} is a paper from Google Research that introduced prompt tuning. Prompt tuning is a simplification of prefix tuning in which a set of tuneable parameters are prepended to the token embeddings of just the inputs instead of the activations of each layer in the transformer. These modified token embeddings are then propogated through the model as before.
+
+\section{Mixture-of-Experts}
+
+\subsection{Sparsely-Gated Mixture-of-Experts Layer}
+
+\cite{shazeer2017outrageously} introduced the Mixture-of-Experts layer
+
+\begin{figure}
+\centering
+  \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{transformers/moe_layer.png}
+  \caption{Mixture-of-Experts Layer \cite{shazeer2017outrageously}}
+  \label{fig:moe_layer}
+\end{figure}
+
+The mixture-of-experts layer uses a gating function $G(x)$ where:
+
+\begin{equation}
+G(x)=Softmax(KeepTopK(H(x),k))
+\end{equation}
+
+\begin{equation}
+H(x)_i=(x \cdot W_g)_i + StandardNormal() \cdot Softplus((x \cdot W_{noise})_i)
+\end{equation}
+
+\begin{equation}
+KeepTopK(v,k)_i = \begin{cases}
+v_i & v_i\ \mathrm{in\ top\ } k \mathrm{\ elements\ of\ } v \\
+- \infty & \mathrm{otherwise}
+\end{cases}
+\end{equation}
+
+\subsection{Switch Transformer}
+
+\cite{fedus2022switch} introduced the Switch Transformer architecture
+
+\begin{figure}
+\centering
+  \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{transformers/switch_transformer.png}
+  \caption{Switch Transformer \cite{fedus2022switch}}
+  \label{fig:switch_transformer}
+\end{figure}
+
+\section{Direct Preference Optimization}
+
+\subsection{Direct Preference Optimization}
+
+\cite{rafailov2023direct} is the paper from Stanford that introduced Direct Preference Optimization as an alternative to RLHF that is "stable, performant, and computationally lightweight," and can "fine-tune LMs to align with human preferences as well as or better than existing methods." The key insight of the paper is that the objective function in training a reward model in RLHF can be reparameterized into a form that does not contain the reward function itself, but only the optimal policy function (with respect to the implicit reward function). In other words, there is a one-to-one correspondence between reward functions (of a certain kind) and the corresponding optimal policy function and the relationship is easily invertible in a closed form. 
+
+\section{Retrieval-Augmented Generation}
+
+\cite{lewis2021retrievalaugmented} is a paper from Facebook Research that introduced RAG.
+
+\begin{figure}
+\centering
+  \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{transformers/rag.png}
+  \caption{Retrieval-Augmented Generation \cite{lewis2021retrievalaugmented}}
+  \label{fig:rag}
+\end{figure}
 
 \section{Byte-Pair Encoding} \label{BPE}
 
@@ -575,6 +789,10 @@ More papers to cover:
 \item QLoRA
 \item Unigrams
 \item SentencePiece
+\item Mixture of Experts
+\item Chain of Thought Prompting
+\item Contrastive Pre-training - this may belong in a separate document
+\item Improving alignment of dialogue agents via targeted human judgements
 \end{enumerate}
 
 
