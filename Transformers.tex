@@ -601,9 +601,11 @@ Data types used in QLoRA are:
   \label{fig:bfloat16}
 \end{figure}
 
-\section{Relative Position Embeddings}
+\section{Position Embeddings}
 
-Relative position embeddings were introduced by \cite{shaw2018selfattention}.
+\subsection{Relative Position Embeddings}
+
+Relative position embeddings were introduced by \cite{shaw2018selfattention}. 
 
 Given relative position embedding matrix $E^r \in \mathbb{R}^{L \times d_{model}}$ and matrix $X \in \mathbb{R}^{L \times d_{model}}$
 
@@ -711,6 +713,27 @@ v_i & v_i\ \mathrm{in\ top\ } k \mathrm{\ elements\ of\ } v \\
   \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{transformers/switch_transformer.png}
   \caption{Switch Transformer \cite{fedus2022switch}}
   \label{fig:switch_transformer}
+\end{figure}
+
+\section{DeepSeek}
+
+\subsection{DeepSeek V2}
+
+\cite{deepseekai2024deepseekv2strongeconomicalefficient} is the paper that introduced multi-head latent attention (MLA). MLA uses low-rank key-value joint compression. If $x_t$ is the input to the MLA layer, MLA computes:
+
+\begin{gather}
+\nonumber c_t^{KV} = W^{DKV}x_t \\
+k_t^C = W^{UK}c_t^{KV} \\
+\nonumber v_t^C = W^{UV}c_t^{KV}
+\end{gather}
+
+where $c_t^{KV} \in \mathbb{R}^{d_c}$ is the compressed latent vector for keys and values, $d_c (<< d_h d_h)$ denotes the key-value compression dimension, $W^{DKV} \in \mathbb{R}^{d_c \times d}$ is the down-projection matrix and $W^{UK},W^{UV} \in \mathbb{R}^{d_hn_h \times d_c}$ are the up-projection matrices for keys and values, respectively. Instead of caching keys and values, MLA only caches $c_t^{KV}$. Moreover, during inference, $W^{UK}$ can be absorbed into $W^Q$ and $W^{UV}$ can be absorbed into $W^O$, so MLA does not need to compute keys and values for attention.
+
+\begin{figure}
+\centering
+  \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{transformers/deepseekv2_fig3.png}
+  \caption{Key-Value Caching in Deepseek \cite{deepseekai2024deepseekv2strongeconomicalefficient}}
+  \label{fig:kv_cache_deepseek}
 \end{figure}
 
 \section{Direct Preference Optimization}

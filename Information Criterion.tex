@@ -1,0 +1,188 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+%\DeclareMathOperator*{\argmax}{argmax}
+%\DeclareMathOperator*{\argmin}{argmin} 
+\usepackage{amsfonts}
+%\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+%\usepackage{amsthm}
+%\theoremstyle{definition}
+%\newtheorem{definition}{Definition}[section]
+%\usepackage{geometry}
+\usepackage{mathtools}
+%\usepackage{listings}
+%
+%\usepackage{xcolor}
+%
+%\definecolor{codegreen}{rgb}{0,0.6,0}
+%\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+%\definecolor{codepurple}{rgb}{0.58,0,0.82}
+%\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+%
+%\lstdefinestyle{mystyle}{
+%    backgroundcolor=\color{backcolour},   
+%    commentstyle=\color{codegreen},
+%    keywordstyle=\color{magenta},
+%    numberstyle=\tiny\color{codegray},
+%    stringstyle=\color{codepurple},
+%    basicstyle=\ttfamily\footnotesize,
+%    breakatwhitespace=false,         
+%    breaklines=true,                 
+%    captionpos=b,                    
+%    keepspaces=true,                 
+%    numbers=left,                    
+%    numbersep=5pt,                  
+%    showspaces=false,                
+%    showstringspaces=false,
+%    showtabs=false,                  
+%    tabsize=2
+%}
+%
+%\lstset{style=mystyle}
+%
+%\usepackage{bbm}
+%\usepackage{physics}
+%\usepackage{parskip}
+%\usepackage{hyperref}
+%\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+%\DontPrintSemicolon
+%\usepackage{varioref}
+%\labelformat{algocf}{\textit{Algorithm}\,(#1)}
+%
+%\usepackage{tikz}
+%\usetikzlibrary{shapes.geometric, arrows, calc, fit, positioning}
+%\tikzstyle{bluebox} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black, fill=blue!30]
+%\tikzstyle{arrow} = [thick,->,>=stealth]
+%
+%\usepackage{hyperref}
+%\hypersetup{
+%    colorlinks,
+%    citecolor=black,
+%    filecolor=black,
+%    linkcolor=black,
+%    urlcolor=black
+%}
+
+\author{Greg Strabel}
+\title{Information Criterion}
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+\section{Summary}
+This document provides a brief overview of Akaike and Bayesian Information Criterion.
+
+\section{Assumptions}
+
+We have a set $\mathbf{X} = \{ x_i \}_{i = 1}^{N}$ of observations from a parametric family of distributions $p(\mathbf{X} \vert \theta)$ where the true value $\theta_0$ is unknown. We assume that $p(\mathbf{X} \vert \theta)$ is twice differentiable in $\theta$ and $\theta \in \mathbb{R}^k$.
+
+\section{Akaike Information Criteria}
+
+Let $\hat{\theta}$ be the maximum likelihood estimator of $\theta$ and define 
+\begin{equation}
+d(\theta') \coloneqq \left[ \int_{\Omega}-2\ln{p(\mathbf{X} \vert \theta)} d\mathbb{P}(\mathbf{X} \vert \theta) \right] \vert_{\theta=\theta'}
+\end{equation}
+
+Then
+
+\begin{align}
+\begin{split}
+\mathbb{E} \left[ d \left( \hat{\theta} \right) \right] &= \underbrace{\mathbb{E} \left[ -2\ln{p(\mathbf{X} \vert \hat{\theta})} \right]}_{\text{A}} \\
+& \quad + \underbrace{ \mathbb{E} \left[ 2 \ln{p( \mathbf{X} \vert \hat{\theta})} - 2 \ln{p( \mathbf{X} \vert \theta_0)} \right] }_{\text{B}} \\
+& \quad + \underbrace{ \mathbb{E} \left[ d(\hat{\theta}) + 2 \ln{p(\mathbf{X} \vert \theta_0)} \right] }_{\text{C}}
+\end{split}
+\end{align}
+
+Using a second order Taylor expansion around $\hat{\theta}$,
+
+\begin{align}
+\begin{split}
+B &= 2 \mathbb{E} \left[ \ln{p(\mathbf{X} \vert \hat{\theta})} - 
+\{ 
+\ln{p(\mathbf{X} \vert \hat{\theta})} 
++ \frac{\partial}{\partial \theta} \ln{p(\mathbf{X} \vert \theta)} \vert_{\theta=\hat{\theta}} (\theta_0 - \hat{\theta}) \} \right]  \\
+& \quad - 2\mathbb{E} \left[ \frac{1}{2}(\theta_0 - \hat{\theta})' \frac{\partial^2}{\partial\theta\partial\theta'}\ln{p(\mathbf{X} \vert \theta)} \vert_{\theta=\hat{\theta}}(\theta_0 - \hat{\theta}) + o_p(1) \right] \\
+&= 2\mathbb{E} \left[ \frac{1}{2}(\theta_0 - \hat{\theta})' \frac{-\partial^2}{\partial\theta\partial\theta'}\ln{p(\mathbf{X} \vert \theta)} \vert_{\theta=\hat{\theta}}(\theta_0 - \hat{\theta}) + o_p(1) \right]
+\end{split}
+\end{align}
+
+The term $(\theta_0 - \hat{\theta})' \frac{-\partial^2}{\partial\theta\partial\theta'}\ln{p(\mathbf{X} \vert \theta)} \vert_{\theta=\hat{\theta}}(\theta_0 - \hat{\theta})$ converges asymptotically to $\chi^2_k$ by the Central Limit Theorem and the Continuous Mapping Theorem. Therefore $B \rightarrow_p k$.
+
+Likewise, using a second order Taylor expansion around $\theta_0$,
+
+\begin{align}
+\begin{split}
+C &= \mathbb{E} \left[ d(\theta_0) + \frac{\partial}{\partial\theta}d(\theta) \vert_{\theta=\theta_0}(\hat{\theta} - \theta_0) \right] \\
+& \quad + \mathbb{E} \left[ \frac{1}{2}(\hat{\theta} - \theta_0)' \frac{\partial^2}{\partial \theta \partial \theta'}d(\theta) \vert_{\theta=\theta_0}(\hat{\theta} - \theta_0) + o_p(1) + 2\ln{q(\mathbf{X} \vert \theta_0)} \right] \\
+&= \mathbb{E} \left[ \frac{1}{2}(\hat{\theta} - \theta_0)' \frac{\partial^2}{\partial \theta \partial \theta'}d(\theta) \vert_{\theta=\theta_0}(\hat{\theta} - \theta_0) + o_p(1) \right] \\
+&= \mathbb{E} \left[ (\hat{\theta} - \theta_0)'\frac{-\partial^2}{\partial\theta\partial\theta'}\ln{p(\mathbf{X} \vert \theta)} \vert_{\theta=\theta_0}(\hat{\theta} - \theta_0) + o_p(1) \right]
+\end{split}
+\end{align}
+
+Because $(\theta_0 - \hat{\theta})' \frac{-\partial^2}{\partial\theta\partial\theta'}\ln{p(\mathbf{X} \vert \theta)} \vert_{\theta=\theta_0}(\theta_0 - \hat{\theta})$ converges asymptotically to $\chi^2_k$, $C \rightarrow_p k$.
+
+It follows that
+
+\begin{equation}
+\mathbb{E} \left[ d\left( \hat{\theta} \right) \right] = \mathbb{E} \left[ -2\ln{p(\mathbf{X} \vert \hat{\theta})} \right] + 2k + o(1)
+\end{equation}
+
+It follows that the Akaike Information Criterion,
+
+\begin{align}
+\begin{split}
+AIC &\coloneqq 2k - 2\ln{p(\mathbf{X} \vert \hat{\theta})}
+\end{split}
+\end{align}
+
+satisfies
+
+\begin{align}
+\begin{split}
+\mathbb{E} \left[ AIC \right] &= 2k + 2 \mathbb{E} \left[- \ln{p(\mathbf{X} \vert \hat{\theta})} \right] \\
+&= \mathbb{E} \left[ d \left( \hat{\theta} \right) \right] + o(1)
+\end{split}
+\end{align}
+
+\section{Bayesian Information Criteria}
+
+Let $p(\theta)$ be a prior on $\theta$. Then using a second order Taylor expansion around $\hat{\theta}$ and Laplace's Approximation, we have
+
+\begin{align}
+\begin{split}
+p(\mathbf{X}) &= \int_{\Theta}p(\mathbf{X} \vert \theta) p(\theta)d\theta \\
+&= \int_{\Theta}\exp{\left[\ln{p(\mathbf{X} \vert \theta)}\right]}p(\theta)d\theta \\
+&= \int_{\Theta}\exp{\left[
+\ln{p(\mathbf{X} \vert \hat{\theta)}} + \frac{\partial}{\partial\theta}\ln{p(\mathbf{X} \vert \theta)} \vert_{\theta=\hat{\theta}}(\theta - \hat{\theta})
+\right]}p(\theta)d\theta \\
+& \quad + \int_{\Theta}\exp{\left[ \frac{1}{2}(\theta - \hat{\theta})'\frac{\partial^2}{\partial\theta\partial\theta'}\ln{p(\mathbf{X} \vert \theta)} \vert_{\theta=\hat{\theta}}(\theta-\hat{\theta}) + o_p(1)
+\right]}p(\theta)d\theta \\
+& \approx \int_{\Theta}p(\mathbf{X} \vert \hat{\theta})\exp{\left[ \frac{n}{2}(\theta - \hat{\theta})'\frac{\partial^2}{\partial\theta\partial\theta'}\frac{1}{n}\ln{p(\mathbf{X} \vert \theta)} \vert_{\theta=\hat{\theta}}(\theta-\hat{\theta}) \right]} \exp{\left[o_p(1)\right]}p(\hat{\theta})d\theta \\
+& \approx p(\mathbf{X} \vert \hat{\theta}) \left( \frac{2\pi}{n} \right)^{k/2}\left[\det{\left(\frac{-\partial^2}{\partial\theta\partial\theta'}\frac{1}{n}\ln{p(\mathbf{X} \vert \theta)} \vert_{\theta=\hat{\theta}}\right)}\right]^{-1/2}p(\hat{\theta})
+\end{split}
+\end{align}
+
+It follows that
+
+\begin{align}
+\begin{split}
+\ln{p(\mathbf{X})} & \approx \ln{p(\mathbf{X} \vert \hat{\theta})} + \frac{k}{2}\ln{2\pi} - \frac{k}{2}\ln{n} \\
+& \quad - \frac{1}{2}\ln{\left[\det{\left(\frac{-\partial^2}{\partial\theta\partial\theta'}\frac{1}{n}\ln{p(\mathbf{X} \vert \theta)} \vert_{\theta=\hat{\theta}}\right)}\right]} + \ln{p(\hat{\theta})} \\
+&= \ln{p(\mathbf{X} \vert \hat{\theta})} - \frac{k}{2}\ln{n} + O_p(1)
+\end{split}
+\end{align}
+
+so that
+
+\begin{align}
+\begin{split}
+BIC & \coloneqq k\ln{n} - 2\ln{p(\mathbf{X} \vert \hat{\theta})} \\
+& \approx -2\ln{p(\mathbf{X})} + O_p(1)
+\end{split}
+\end{align}
+
+%\bibliographystyle{alpha} % We choose the "plain" reference style
+%\bibliography{information_criterion} % Entries are in the refs.bib file
+
+\end{document}

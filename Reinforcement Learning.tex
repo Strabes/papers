@@ -187,10 +187,16 @@ The estimate of the gradient typically takes the form
 
 \subsection{Trust Region Policy Optimization} 
  
-Trust Region Policy Optimization was introduced by \cite{trpo}.
+Trust Region Policy Optimization was introduced by \cite{trpo}. TRPO optimizes
+
+\begin{equation}
+\mathrm{maximize}_{\theta} \mathbb{\hat{E}}_t \left[ 
+\frac{\pi_{\theta} \left(s_t, a_t, \theta \right)}{\pi_{\theta_{old}} \left(s_t, a_t, \theta \right)}
+ \hat{A}_t \right]
+\end{equation}
 
 \subsection{Proximal Policy Optimization}
-TODO: Section on Proximal Policy Optimization a la \cite{schulmanppo}
+Proximal Policy Optimization was introduced in \cite{schulmanppo}
 
 \section{Q-learning}
 
